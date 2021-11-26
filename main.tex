@@ -1,0 +1,44 @@
+\documentclass[a4paper, 10pt, oneside]{report}
+\usepackage[utf8]{inputenc}
+ 
+
+\input{lib/includes}
+\input{lib/acronyms}
+\input{lib/commands}
+
+\title{145071 - Real time operating systems and middleware}
+\author{Marco Peressutti\\230403\\marco.peressutti@studenti.unitn.it}
+\date{\today}
+
+\includeonly{
+chapters/01-Introduction,
+chapters/02-RTScheduling,
+chapters/03-TimeDemandAnalysis,
+chapters/04-SharedResources,
+chapters/05-DynamicScheduling,
+chapters/06-AperiodicServers,
+chapters/07-EDFScheduling,
+chapters/0A-MarkovChains}
+
+\addbibresource{bib/bibliografia.bib}							% agguinge database bibliografico
+\graphicspath{{images/}}	
+\makeglossaries
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\include{chapters/01-Introduction}
+\include{chapters/02-RTScheduling}
+\include{chapters/03-TimeDemandAnalysis}
+\include{chapters/04-SharedResources}
+\include{chapters/05-DynamicScheduling}
+\include{chapters/06-AperiodicServers}
+\include{chapters/07-EDFScheduling}
+\include{chapters/0A-MarkovChains}
+
+\clearpage
+\chapter*{Bibliography}
+\addcontentsline{toc}{chapter}{{Bibliography}}
+\printbibliography[heading=bibempty]
+\end{document}
