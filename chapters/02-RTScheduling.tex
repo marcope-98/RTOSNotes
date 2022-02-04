@@ -1,1 +1,42 @@
-\chapter{Real-Time scheduling}
+\chapter{Real-Time scheduling and analysis}
+
+\section{Real-Time Scheduling}
+\subsection{Definitions}
+Definitions:
+\begin{itemize}
+\item \side{Algorithm}: logical procedure used to solve a problem
+\item \side{Program}: formal description of an algorithm, using a \side{programming language}
+\item \side{Process}: instance of a program (program in execution)
+\begin{itemize}
+\item Program: static entity
+\item Process: dynamic entity
+\end{itemize}
+\item The term \side{task} is used to indicate a schedulable entity (either a process or a thread)
+\begin{itemize}
+\item \side{Thread}: flow of execution
+\item Process: flow of execution + private resources (address space, file table, etc...)
+\end{itemize}
+\end{itemize}
+
+\subsection{Executing Concurrent Tasks}
+Tasks do not run on bare HW...
+\begin{itemize}
+\item How can multiple tasks execute on one single CPU?
+\item The \side{OS kernel} creates the illusion of having more CPUs, so that multiple tasks execute in parallel
+\begin{itemize}
+\item Tasks have the illusion of executing concurrently
+\item a dedicated CPU per task
+\end{itemize}
+\end{itemize}
+
+\subsection{Scheduling Concurrent Tasks}
+
+\subsection{Scheduler}
+
+\subsection{Cyclic Executive Scheduling}
+\subsection{Fixed Priority Scheduling}
+\subsection{Priority Assignment}
+\subsection{Optimal Priority Assignment}
+\subsection{Analysis}
+
+\section{Real-Time Scheduling analysis}
