@@ -168,14 +168,75 @@ These execution times might depend on different factors:
 \end{itemize}
 
 \section{Schedulability analysis}
+Schedulability analysis tries to answer the question: Given a task set $\mathcal{T}$, how can we guarantee if it is schedulable or not?
+\subsection{Simulating the hyperperiod}
+The first possibility is to simulate the system to check that no deadline is missed. The execution time of every job is set equal to the WCET of the corresponding task.\\
 
-\subsection{Worst-Case Response Time Analysis}
+In the case of periodic tasks with no offsets it is sufficient to simulate the schedule until the \side{hyperperiod} (H = $lcm\{T_i\}$).\\
+In the case of offsets $\phi_i = r_{i,0}$ it is sufficient to simulate until $2H + \phi_{max}$.\\
+If tasks periods are prime numbers the hyperperiod can be very large!
+
+In the case of sporadic tasks, we can assume them to arrive at the highest possible rate, so we fall back to the case of periodic tasks with no offsets.
+
+\subsection{(Worst-Case) Response Time Analysis}
+According to the methods proposed by Audsley et al., the longest response time $R_i$ of a periodic task $\tau_i$ is computed, at the critical instant, as the sum of its computation time and the interference $I_i$ of the higher priority tasks:
+\[R_i = C_i + I_i\]
+where:
+\[I_i = \sum_{j=1}^{i-1} \ceil{\cfrac{R_i}{T_j}} C_j\]
+Hence,
+\begin{equation}
+    \label{eq:equation0}
+    R_i = C_i + \sum_{j=1}^{i-1} \ceil{\cfrac{R_i}{T_j}} C_j
+\end{equation}
+
+\define{Critical instant}{The Critical instant for task $\tau_i$ occurs when job $J_{i,j}$ is released at the same time with a job in every high priority task}
+It is straighforward to notice that if all the offsets of the task set are 0, the first job of every task is released at the \side{critical instant}.
+
+A job $J_{i,j}$ released at the critical instant experiences the maximum response time for $\tau_i$:
+\[\forall k,\quad \rho_{i,j}\ge\rho_{i,k}\]
+No simple solution exists for this equation since $R_i$ appears on both sides of the equation. Thus, the worst-case response time of task $\tau_i$ is given by the smallest value of $R_i$ that satisfies equation \ref{eq:equation0}.
+Notice, however, that only a subset of points in the interval $[0, D_i]$ need to be examined for feasibility. In fact, the interference on $\tau_i$ only increases when there is a release of a higher-priority task.
+
+To simplify the notation, let $R_^{(k)}$ be the $k$-th estimate of $R_i$ and let $I_i^{(k)}$ be the interference on task $\tau_i$ in the interval $[0, R_i^{(k)}]$
+
 % can compute an exact result
 % any priority assignment and preemptive scheduling
 
 \subsection{Processor Demand Analysis}
 
 \subsection{Processor Utilization Factor test}
+The feasibility of a task set with contrained deadlines could be guaranteed using the utilization based test, by reducing tasks' periods to relative deadlines:
+\[U_{lub} = \sum_{i=1}^n \cfrac{C_i}{D_i} \le n(2^{\sfrac{1}{n}-1})\]
+However, such a test would be quite pessimistic, since the workload on the processor would be overestimated.\\
+For this reason this test is \textbf{sufficient but not necessary}.
+
+Nonetheless, in many cases it is useful to have a very simple test to see if a task set is schedulable.
+This sufficient test is based on the \side{Utilisation bound}.
+\define{Utilisation Least Upper Bound}{The utilisation least upper bound for a scheduling algorithm $\mathcal{A}$ is the smallest possible utilisation $U_{lub}$ such that, for any task set $\mathcal{T}$, if the task set's utilisation $U$ is not greater than $U_{lub}$ ($U \le U_{lub}$), then the task set is schedulable by algorithm $\mathcal{A}$}
+
+In other terms, we can consider that each task uses the processor for a fraction of time 
+\[U_i = \cfrac{C_i}{T_i}\]
+The total processor utilisation is
+\[U = \sum_i \cfrac{C_i}{T_i}\]
+which we will consider as a measure of the processor's load.
+
+Given these definition, the necessary condition for the schedulability of a task set is:
+\begin{itemize}
+    \item If $U>1$ the task set is surely not schedulable
+    \item If $U\le U_{lub}$, the task set is schedulable
+    \item If $U_{lub}<U \le 1$ the task set may or may not be schedulable
+\end{itemize}
+Ideally a value of $U_{lub} = 1$ would be optimal.
+
+In general, given that the tasks might not always have relative deadline equals to the period the formulation of the total processor utilisation considers the relative deadline:
+\[U' = \sum_{i=1}^n \cfrac{C_i}{D_i}\]
+This approach considers the worst case for a task\dots hence if the task set is guaranteed using the relative deadlines, it must hold that the test holds even when considering the period.
+
+The bound is very pessimistic: most of the times, a task set with $U>U_{lub}$ is schedulable.\\
+A particular case is when tasks have periods that are harmonic.
+\define{Harmonic task set}{A task set is harmonic if, for every two tasks $\tau_i, \tau_j$ either $T_i$ is multiple of $T_j$ or $T_j$ is multiple of $T_i$}
+For a harmonic task set, the utilisation bound is $U_{lub} = 1$.
+(Foreshadowing: Rate Monotonic is an optimal algorithm for harmonic task sets)
 % sufficient but not necessary
 % does not compute an exact result
 % RM assignment and preemptive scheduling

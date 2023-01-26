@@ -5,10 +5,10 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
 
 # TODO: #
 - [x] Introduction to the Course
-- [~] Basic Concepts
+- [x] Basic Concepts
 - [ ] Periodic Task Scheduling
-    - [ ] Cyclic Executive Scheduling
-    - [ ] Fixed Priority Scheduling
+    - [x] Cyclic Executive Scheduling
+    - [x] Fixed Priority Scheduling
     - [ ] Dynamic Priority Scheduling
 - [ ] Aperiodic Servers
     - [ ] Background Execution
