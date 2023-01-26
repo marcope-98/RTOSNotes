@@ -1,15 +1,15 @@
 # Overview #
 This repository contains the notes of the course "145071 - Real Time Operating Systems and Middleware"
 
-Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/20)
+Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/38)
 
 # TODO: #
 - [x] Introduction to the Course
 - [x] Basic Concepts
-- [ ] Periodic Task Scheduling
+- [x] Periodic Task Scheduling
     - [x] Cyclic Executive Scheduling
     - [x] Fixed Priority Scheduling
-    - [ ] Dynamic Priority Scheduling
+    - [x] Dynamic Priority Scheduling
 - [ ] Aperiodic Servers
     - [ ] Background Execution
     - [ ] Immediate Execution
