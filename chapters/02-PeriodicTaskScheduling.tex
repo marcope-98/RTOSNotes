@@ -1,0 +1,25 @@
+\chapter{Periodic Task Scheduling}
+The term task is used to indicate a schedulable entity (either a process or a thread), in particular:
+\begin{itemize}
+    \item A thread represents a flow of execution (it executes with shared resources, multi thread within the same process)
+    \item A process represents a flow of execution + private resources (it executes with its own resources), such as address space, file table, \dots
+\end{itemize}
+
+Tasks do not run on bare hardware, but then how can multiple tasks execute on one single CPU?\\
+The OS kernel is a piece of the operating system that takes care of multi-programming and somehow it is able to create the illusion that each CPU/processor has its own space, whereas in fact it is sharing the same resources with other processes.\\
+In the end the kernel provides the mechanism that enable multiple tasks to execute in parallel; in a sense tasks have the illusion of executing concurrently on a dedicated CPU per task.
+
+On this regard, with the term concurrency we refer to the simultaneous execution of multiple threads/processes in the same PC.\\
+Concurrency is implemented by multiplexing tasks on the same CPU. Tasks are alternated on a real CPI and the task scheduler decides which task executes at a given instant in time. In other terms, in order to implement the concurrency mechanism it is necessary to introduce this new component (i.e. the task scheduler), since it makes sure that the time of your pc is shared between the different processes or tasks that compete for the reosurces at that time.
+
+Tasks are associated to temporal constraints (a.k.a. deadlines), hence the scheduler must allocate the CPU to tasks so that their deadlines are respected
+
+\section{Real Time Scheduling}
+\section{Cyclic Executive Scheduling}
+\section{Fixed Priority Scheduling}
+\subsection{Rate Monotonic Scheduling}
+\subsection{Deadline Monotonic Scheduling}
+\section{Dynamic Priority Scheduling}
+\subsection{Earliest Deadline First (EDF)}
+\subsection{EDF with deadlines less than periods}
+

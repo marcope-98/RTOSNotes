@@ -1,0 +1,189 @@
+\chapter*{Introduction to the Course}
+\section*{Material}
+\begin{itemize}
+    \item Slides available from moodle
+    \item Interested students can have a look at: \textit{Giorgio Buttazzo}, \textbf{HARD REAL-TIME COMPUTING SYSTEMS: Predictable Scheduling Algorithms and Applications}
+\end{itemize}
+\section*{Exam}
+\subsection*{Written Exam}
+\begin{itemize}
+    \item 3 questions, 30 minutes per question
+    \item Each answer gets a score from 0 to 30
+    \item (Optional) project
+\end{itemize}
+
+\subsection*{Oral Exam}
+\begin{itemize}
+    \item Discussion of the written exam
+    \item Open Questions or Discussion on a project
+\end{itemize}
+
+\section*{Prerequisites}
+\begin{itemize}
+    \item Programming skills: C, maybe C++.\\
+    You must know how ot code in C (optionally C++). This is not about knowing the C syntax, it is about writing good and clean C code.\\
+    To help overcome this lack of prerequisites please consider reading the book \textit{Kerrigan \& Ritchie},\textbf{The C Programming Language}
+    \item Knowledge about Operating Systems.\\
+    This prerequisites is met if you have taken the course \textit{Sistemi Operativi 1} or similar exams.\\
+    Alternatively please refer to a good Operating Systems book (e.g. Stallings,\dots).\\
+    This includes how to use a shell, basic POSIX commands, \texttt{make}, how to compile, \dots.
+\end{itemize}
+
+\section*{Overview of the Course}
+The course will cover 6 main macro areas of real time operating systems and middleware.
+\begin{enumerate}
+    \item Real Time Systems:
+    \begin{itemize}
+        \item Real-Time Computing and temporal constraints.\\
+        Real time systems are software and hardware systems (hence computing systems), that have to comply with temporal constraints.
+        \item Definitions and task model\\
+        We will make things much clearer and better defined by introducing a sequence of definitions and mathematical models that will allow us to given this notion of temporal constraint a well founded meaning.
+        \item Real-Time Scheduling\\
+        We will also study solutions that allow us to enforce these real time constraints and this solution will have much to do on how we schedule shared resources.
+    \end{itemize}
+    \item Real-Time programming, RT-POSIX, pthreads,\dots\\
+    We will move to a concrete ground and see what is the exact shape that these notions take once they are moved in a computer program. 
+    \item Real-Time Scheduling algorithms:
+    \begin{itemize}
+        \item Fixed Priority scheduling, RM, DM
+        \item EDF and dynamic priorities
+        \item Resource Sharing (Priority Inversion, \dots)
+    \end{itemize}
+    As regards the Real-Time scheduling we will see many interesting policies, but since this is not a course on Real Time scheduling what we will do is provide the knowledge of real time scheduling so that the reader will be able to understand the mechanism of real time operating systems and thereby make best use of these technologies in future projects.
+    \item Operating System Structure
+    \begin{itemize}
+        \item Notes about traditional kernel structures\\
+        In order to keep latencies in check, we need proper technological solutions that make our operating systems differ quite a bit from standard operating systems.
+        \item Sources of kernel latencies
+        \item Some approaches to real-time kernels (e.g. dual kernel approach, interrupt pipes, microkernels, monolithis kernels and RT)
+    \end{itemize}
+    \item Real-Time Kernels and OSs.
+    \item Developing Real-Time applications
+\end{enumerate}
+
+\subsection*{Real-Time Operating Systems}
+In order to discuss about the Real-Time systems we need to provide some basic definitions:
+\define{Real-Time Operating Systems (RTOS)}{Operating Systems that provide support to Real-Time Applications}
+\define{Real-Time application}{the correctness depends not only on the output values, but also on the time when such values are produced}
+\define{Operating Systems (OS)}{
+    \begin{itemize}
+        \item Set of computer programs, of critical programs to be precise: because they have to be written efficiently, otherwise the hardware resources get disrupted, hence the system cannot operate correctly.
+        \item Interface between applications and hardware. 
+
+        Whenever an application interacts with an hardware, it is not of the developer interest to directly control the hardware. The Operating System provides an API that enables you to open a connection to a peripheral and takes care of all the low level interactions.
+        On this regard, understanding the notion of interrupt will be of fundamental importance, because it is, essentially, what gave rise to concurrent programming: in the case we would like to interact with a peripheral, rather than continuously check if the peripheral has ended what it is supposed to do, you can tell the peripheral to communicate when it has completed the given task.
+        
+        Anyway the Operating systems acts as an interface towards the hardware and hides away all these complex details.
+        \item Control the execution of application programs
+        \item Manage the hardware and software resources
+    \end{itemize}
+}
+
+Since the Operating System is something that lies in-between the user application and the hardware resources we can summarize the aforementioned interpretation of 
+\begin{itemize}
+    \item \side{Service Provider} for user programs (i.e. exports a programming interface).
+    
+    This concept looks at the OS from the perspective of the software application, in the sense that the Operating Systems provides to the application a series of services:
+        \begin{itemize}
+        \item Process Synchronization mechanism
+        \item Inter-Process Communication (IPC)
+        \item Process/Thread Scheduling, i.e.  ways to create and schedule tasks
+        \item Input/Output
+        \item Virtual Memory
+        \end{itemize}
+    And all these services are accessible through an API.
+
+
+    \item \side{Resource Manager}\\
+    If you think at the Operating System as a Resource Manager, then it is something that takes care of many things:
+    \begin{enumerate}
+        \item \side{Process Management}\\
+        The fact that multiple applications can run at the same time on a PC, even though there is a small amount of processor available to manage these applications. (generally 2,4 or 8).
+        
+        The number of application that you are likely to create is often on the hundreds, hence it is necessary to make an appropriate sharing of the limited resources that you have in order for all the applications to live correctly.
+        \item \side{Memory Management}\\
+        Supposing one is using a 64-bit architecture, what will happen is that a space of memory is addressable with 64 bit. As a consequence we can imagine that the addressable memory is space has $2^{64} - 1$ memory locations available.
+        
+        And each application sees, these much space available for its execution. But however large the space can be in a machine, it will never match the aforementioned size. It could potentially for one task, but in the case a machine is hundreds of tasks and each of them wants to use that much memory, there is no way that the hardware can provide enough physical memory to satisfy all of them.
+        
+        To counteract this problem, it is common practice to schedule the memory as well, because you take advantage of the fact that an application CAN use $2^{64} - 1$ memory locations, but at a given time it uses a tiny portion of these locations. It is only that tiny portion of memory locations that needs to be made available to the running task.
+        
+        In this scenario, the OS makes it possible to accommodate within the physical memory of the computer these small slices of the available space that the application uses. So somehow it operates as a resource manager for the memory as well.
+        \item \side{File Management}
+        \item \side{Networking}, \side{Device Drivers}, \side{Graphical Interface}
+        \end{enumerate}
+        The important thing is that all of these resources, like the processor, the memory, the drivers etc..., are shared between all the tasks.
+        All these resource managers have to be distributed among all the spectrum of tasks in such a way that the tasks behave properly, i.e. if you do not provide frequently enough these resources they would not be able to deliver the result on time (the OS manages this problem on its own).
+        
+        In the case we decide to look at the Operating System as a Resource Manager, we need to think of a structure for the OS that makes this resource management effective, effective in the sense that we believe it is the most relevant for our specific range of application.
+        
+        The way OSs handles devices, interrupt, etc. can be very different (and optimized in very different ways) depending on the type of application one is looking at. However, the type of optimizations we are interested in are those that allow our application to have time-limited execution.
+\end{itemize}
+
+
+
+\subsection*{Real-Time Systems}
+A \side{Real-Time application} is an application of which the time when a result is produced matters.
+
+In particular:
+\begin{itemize}
+\item a correct result produced too late is equivalent to a wrong result, or to no result.
+\item it is characterized by temporal constraints that have to be respected.
+\end{itemize}
+
+\eg{Mobile vehicle}{
+    Let us consider a mobile vehicle with a software module that
+    \begin{enumerate}
+        \item Detects obstacles
+        \item Computes a new trajectory to avoid them
+        \item Computes the commands for engine, brakes,\dots
+        \item Sends the commands
+    \end{enumerate}
+    If you decide to steer to the left or to the right there is a limited amount of time in which the operation has to be carried out. Hence if one can find an extremely effective strategy for steering the wheels but the strategy amounts to setting the values for the motors after one second, it is completely useless, since the vehicle is most likely to crash.
+
+Hence a time violation in executing a task is a critical problem: it means that the developed application is useless and also dangerous.
+
+But then, what is a reasonable time frame for completing the steering operation?\\
+Depends on the speed in which the vehicle is traveling. But no matters if the vehicle is traveling at high or low speed the timing constraint is there, and if it is violated, the vehicle will eventually crash against the obstacle.
+
+As a consequence: when a constraint is set, that constraint needs to be respected. And this is one of the core concept of Real Time.
+}
+
+Hence, a Real-Time is not necessarily synonym of fast execution, but rather of \side{predictable} execution.\\
+Real time computing has much more to do with predictability than of being quick.
+
+
+Some examples of temporal contraints are:
+\begin{itemize}
+    \item The program must react to external events in a predictable time
+    \item The program must repeat a given activity at a precise rate
+    \item The program must end an activity before a specified time
+\end{itemize}
+
+In this case, we can clearly notice that the temporal constraints can be either one shot events or periodic events, but in both cases, a common characteristic, there is a need of being predictability.\\
+Temporal constraints are modeled using the concept of \side{deadline}.
+
+
+Please notice that a Real-Time system is not just a \textit{fast system}, because the speed is always relative to a specific environment, i.e. the steering commands temporal constraint is set by the velocity of the vehicle.
+
+Running faster is good, but does not guarantee the correct behavior. In fact, it is far more valuable to that temporal constraints are always respected; in other terms Real time systems prefer to run fast enough to respect the deadlines, to be reliable.
+
+Hence, the type of analysis that is necessary to perform is not an analysis based on of average/typical cases but rather an analysis of worst case: I have to prove that even in the worst-case scenario, there is not deadline violation.
+
+This predictability creates a wide gap between what a Real Time system is and what a general purpose system is, because general purpose systems are optimised for the average case, but a real time system only cares about the worst case. As a consequence, the way one designs a Real Time system is very different from the way a general purpose system is designed.\\
+In fact:
+\begin{itemize}
+\item When one optimize for the average case, what one would look at is the number of times that an application completes a task every second, and this is called \side{Throughput}.
+\item When one have a worst case requirement, the notion of throughput is not relevant anymore, and the analysis focuses in every single instance the maximum delay will be bounded.
+\end{itemize}
+
+Let us introduce some notion and general terms that we will extensively using during the course
+\define{Algorithm}{Logical procedure used to solve a problem}
+\define{Program}{Formal description of an algorithm, using a \textit{programming language}}
+\define{Process}{Instance of a program (program in execution)}
+\define{Thread}{Flow of execution, something that is able to execute using your processor along with other threads. These threads can be part of the same program and they can be executed in parallel.}
+\define{Task}{Process or thread}
+
+Hence there are two different ways of sharing resources: one are threads in which your share computing resources and memory space, and processes in which you share computer resources but each of the processes has its own memory space.\\
+Unfortunately, there is no common definition of a task: somebody use the terms with the same meaning as a thread and sometimes it is used with the same meaning as a process. In this class we will refer to threads.\\
+Henceforth, when we talk about a task we will refer to a program that it is running and they share the same memory space with other programs.
