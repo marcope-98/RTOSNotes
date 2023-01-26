@@ -197,12 +197,82 @@ A job $J_{i,j}$ released at the critical instant experiences the maximum respons
 No simple solution exists for this equation since $R_i$ appears on both sides of the equation. Thus, the worst-case response time of task $\tau_i$ is given by the smallest value of $R_i$ that satisfies equation \ref{eq:equation0}.
 Notice, however, that only a subset of points in the interval $[0, D_i]$ need to be examined for feasibility. In fact, the interference on $\tau_i$ only increases when there is a release of a higher-priority task.
 
-To simplify the notation, let $R_^{(k)}$ be the $k$-th estimate of $R_i$ and let $I_i^{(k)}$ be the interference on task $\tau_i$ in the interval $[0, R_i^{(k)}]$
+To simplify the notation, let $R_i^{(k)}$ be the $k$-th estimate of $R_i$ and let $I_i^{(k)}$ be the interference on task $\tau_i$ in the interval $[0, R_i^{(k)}]$
+\begin{equation}
+    I_i^{(k)} = \sum_{j=1}^{i-1} \ceil{\cfrac{R_i^{(k)}}{T_j}}C_j
+    \label{eq:equation1}
+\end{equation}
+    Then the calculation of $R_i$ is performed as follows:
+\begin{enumerate}
+    \item Iteration starts with $R_i^{(0)} = \sum_{j=1}^{i} C_j$, which is the first point in time that $\tau_i$ could possibly complete
+    \item The actual interference $I_i^k$ in the interval $[0, R_i^{(k)}]$ is computed by equation \ref{eq:equation1}
+    \item If $I_i^{(k)} + C_i = R_i^{(k)}$, then $R_i^{(k)}$ is the actual worst-case response time of task $\tau_i$; that is, $R_i = R_i^{(k)}$. Otherwise, the next estimate is given by 
+     \[R_i^{(k+1)} = I_i^{(k)} + C_i\]
+     and the iteration continues from step 2. 
+\end{enumerate}
+
+Once $R_i$ is calculated, the feasibility of task $\tau_i$ is guaranteed if and only if $R_i \le D_i$.
+
+The response time analysis is an efficient algorithm: in the worst case, the number of steps $N$ for the algorithm to converge is exponential and it depends on the total number of jobs of higher priority tasks in the interval $[0, D_i]$:
+\[N \propto \sum_{h=1}^{i-1} \ceil{\cfrac{D_h}{T_h}}\]
+If $s$ is the minimum granularity of the time, then in the worst case $N = \cfrac{D_i}{s}$. However, such worst case is very rare, usually the number of steps is low.
 
 % can compute an exact result
 % any priority assignment and preemptive scheduling
 
 \subsection{Processor Demand Analysis}
+
+Another necessary and sufficient test for checking the schedulability of fixed priority systems with constrained deadlines was proposed by Lehoczky, Sha and Ding. The test is based on the concept of Level-$i$ workload, defined as follows
+\define{Level-$i$ workload}{The Level-$i$ workload $W_i(t)$ is the cumulative computation time requested in the interval $(0,t]$ by task $\tau_i$ and all the tasks with priority higher than $p_i$}
+
+The basic idea is very simple: in any interval, the computation demanded by all tasks in the set must never exceed the available time.\\
+The problem is: how to compute the time demanded by a tast set $\mathcal{T}$?\\
+Since we have to look only at jobs released at the critical instant, we can consider all offsets equal to zero and only consider the first job of each task\dots
+\define{Processor Demand}{
+    Given an interval $[t_1, t_2]$, let $\mathcal{J}_{t_1, t_2}$ be the set of jobs started after $t_1$ and with deadline lower than or equal to $t_2$:
+    \[\mathcal{J}_{t_1, t_2} = \{J_{i,j}:r_{i,j} \ge t_1 \wedge d_{i,j} \le t_2\}\]
+    The processor demand in $[t_1, t_2]$ is defined as:
+    \[W(t_1, t_2) = \sum_{J_{i,j}\in \mathcal{J}_{t_1, t_2}} c_{i,j}\]
+    Worst case: use $C_i$ instead of $c_{i,j}$
+    }
+
+    Guaranteeing a task set $\mathcal{T}$ based on $W(t_1, t_2)$ can take a long time.\\
+    In fact, it must hold
+    \[\forall(t_1, t_2) \quad W(t_1, t_2) \le t_2 - t_1\]
+    This means that the test requires to check all the $(t_1, t_2)$ combinations in a hyperperiod.\\
+    However, we only need to check the first job of every task $\tau_i$.
+
+    The quantity $W_i(t_1, t_2)$ is the time demanded in $[t_1, t_2]$ by all tasks $\tau_j$ with $p_j \ge p_i$ ($\Rightarrow j \le i$)
+
+    We can consider only $W_i(0,t)$.\\
+    For task $\tau_i$ only check $W_i(0,t)$ for $0\le t\le D_i$.\\
+    Change $\forall$ into $\exists$: consider worst case for $W_i()$\\
+    The number of jobs in $[0,t]$ is $\floor{\cfrac{t}{T_i}}$\\
+    Use $\ceil{}$ instead
+
+    We already have hints about computing an upper bound for $W_i(0,t)$\dots
+    \[W_i(0,t) = C_i + \sum_{h=1}^{i-1} \ceil{\cfrac{t}{T_h}}C_h\]
+
+    Task $\tau_i$ is schedulable if and only if $\exists t : 0 \le t \le D_i \wedge W_i(0,t) \le t$.\\
+    A task set $\mathcal{T}$ is schedulable if and only if
+    \[\forall \tau_i \in \mathcal{T},\quad \exists t : 0 \le t \le D_i \wedge W_i(0,t) \le t\]
+    Sometimes, different notations in literature:
+    \[W_i(0,t)\rightarrow W_i(t) - \sum_{h=1}^i \ceil{\cfrac{t}{T_h}} C_h\]
+    This is equivalent, because $0 \le t \le T_i$.\\
+    Someone defines 
+    \[L_i(t_1,t_2) = \cfrac{W_i(t_1, t_2)}{t_2 - t_1}\]
+    \[L_i = \min_{0\le t\le D_i} L_i(0,t)\qquad;\qquad L = \max_{\tau_i \in \mathcal{T}} L_i\]
+    The guarantee tests then becomes:
+    \begin{itemize}
+        \item Task $\tau_i$ is schedulable iff $L_i \le 1$
+        \item $\mathcal{T}$ is schedulable iff $L \le 1$
+    \end{itemize}
+    The test might still be long (need to check many values of $L(0,t)$ to find the minimum)\dots\\
+    The number of points to check for computing $W_i$ or $L_i$ can be reduced:
+    \[S_i = \left\{k\,T_h | h \le i; 1 \le k \le \floor{\cfrac{T_i}{T_h}}\right\}\]
+    multiples of $T_h$ for $h \le i$
+    \[L_i = \min_{t\in S_i} L_i(0,t)\]
+
 
 \subsection{Processor Utilization Factor test}
 The feasibility of a task set with contrained deadlines could be guaranteed using the utilization based test, by reducing tasks' periods to relative deadlines:

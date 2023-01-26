@@ -34,7 +34,7 @@ To verify that no missed deadlines occur, a \side{Schedulability test} checks if
 
 \section{Cyclic Executive Scheduling}
 
-\side{Timeline Scheduling}, also known as \side{Cyclic Executive Scheduling}, is one of the most used approaches to handle periodic tasks in defense military systems and traffic control systems.\\
+\textbf{Timeline Scheduling}\pside{Timeline Scheduling}, also known as \side{Cyclic Executive Scheduling}, is one of the most used approaches to handle periodic tasks in defense military systems and traffic control systems.\\
 The methods consists of dividing the tmeporal axis into slots of equal length, in which one or more tasks can be allocated for execution, in such a way to respect the frequencies derived from the application requirements. A timer synchronizes the activation of the tasks at the beginning of each time slot.
 
 Cyclic Executing Scheduling is a \side{static scheduling algorithm} where \textbf{jobs are not preemptable} (i.e. A scheduled job executes until termination).\\
@@ -99,6 +99,14 @@ The DM priority assignment is \textbf{optimal}, meaning that, if a task set is s
 This holds also for sporadic tasks.
 
 \section{Dynamic Priority Scheduling}
+RM and DM are optimal fixed priority assignments. Maybe we can improve schedulability by using \side{dinamic priorities}?
+Assumption: priorities change from job to job (a job $J_{i,j}$ always has the same priority $p_{h,k}$)
+
 \subsection{Earliest Deadline First (EDF)}
-\subsection{EDF with deadlines less than periods}
+
+The Earliest Deadline First (EDF) algorithm is a dynamic scheduling rule that selects tasks according to their absolute deadlines. Specifically, tasks with realier deadlines will be executed at higher priorities. Since the absolute deadline of a periodic task depends on the current $j$th instance as
+\[d_{i,j} = (j-1) T_i + D_i\]
+EDF is a dynamic priority assignment. Moreover, it is typically executed in preemptive mode, thus the currently executing task is preempted whenever another periodic instance with realier deadline becomes active.
+
+Note that EDF does not make any specific assumption on the periodicity of the tasks; hence, it can be used for scheduling periodc as well as aperiodic and sporadic tasks.
 
