@@ -92,7 +92,7 @@ Hence, the server behaviour can be described by the algorithm:
         \IF{$\exists$ pending aperiodic request}
         \STATE enqueue $J_k$
         \ELSE
-        \IF ($q_s \ge (d_s - r_k)\,U_s$)  % not enough budget left
+        \IF{($q_s \ge (d_s - r_k)\,U_s$)}  % not enough budget left
         \STATE $q_s \leftarrow Q_s$       % replanish the budget
         \STATE $d_s \leftarrow r_k + T_s$ % generate new deadline
         \ELSE
