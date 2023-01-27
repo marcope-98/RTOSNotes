@@ -63,9 +63,9 @@ The course will cover 6 main macro areas of real time operating systems and midd
 
 \subsection*{Real-Time Operating Systems}
 In order to discuss about the Real-Time systems we need to provide some basic definitions:
-\define{Real-Time Operating Systems (RTOS)}{Operating Systems that provide support to Real-Time Applications}
-\define{Real-Time application}{the correctness depends not only on the output values, but also on the time when such values are produced}
-\define{Operating Systems (OS)}{
+\definition{Real-Time Operating Systems (RTOS)}{Operating Systems that provide support to Real-Time Applications}
+\definition{Real-Time application}{the correctness depends not only on the output values, but also on the time when such values are produced}
+\definition{Operating Systems (OS)}{
     \begin{itemize}
         \item Set of computer programs, of critical programs to be precise: because they have to be written efficiently, otherwise the hardware resources get disrupted, hence the system cannot operate correctly.
         \item Interface between applications and hardware. 
@@ -131,7 +131,7 @@ In particular:
 \item it is characterized by temporal constraints that have to be respected.
 \end{itemize}
 
-\eg{Mobile vehicle}{
+\example{Mobile vehicle}{
     Let us consider a mobile vehicle with a software module that
     \begin{enumerate}
         \item Detects obstacles
@@ -178,11 +178,11 @@ In fact:
 \end{itemize}
 
 Let us introduce some notion and general terms that we will extensively using during the course
-\define{Algorithm}{Logical procedure used to solve a problem}
-\define{Program}{Formal description of an algorithm, using a \textit{programming language}}
-\define{Process}{Instance of a program (program in execution)}
-\define{Thread}{Flow of execution, something that is able to execute using your processor along with other threads. These threads can be part of the same program and they can be executed in parallel.}
-\define{Task}{Process or thread}
+\definition{Algorithm}{Logical procedure used to solve a problem}
+\definition{Program}{Formal description of an algorithm, using a \textit{programming language}}
+\definition{Process}{Instance of a program (program in execution)}
+\definition{Thread}{Flow of execution, something that is able to execute using your processor along with other threads. These threads can be part of the same program and they can be executed in parallel.}
+\definition{Task}{Process or thread}
 
 Hence there are two different ways of sharing resources: one are threads in which your share computing resources and memory space, and processes in which you share computer resources but each of the processes has its own memory space.\\
 Unfortunately, there is no common definition of a task: somebody use the terms with the same meaning as a thread and sometimes it is used with the same meaning as a process. In this class we will refer to threads.\\

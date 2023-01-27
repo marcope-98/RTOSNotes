@@ -151,7 +151,7 @@
 
 % red box used for examples
 \makeatletter
-\newtcbtheorem{example}{Example}{enhanced,
+\newtcbtheorem{iexample}{Example}{enhanced,
 	breakable,
 	colback=white,
 	colframe=myr!80!black,
@@ -178,7 +178,7 @@
 
 % blue box used for definitions
 \makeatletter
-\newtcbtheorem{definition}{Definition}{enhanced,
+\newtcbtheorem{idefinition}{Definition}{enhanced,
 	breakable,
 	colback=white,
 	colframe=myb!80!black,
@@ -205,7 +205,7 @@
 
 % green box used for theorems
 \makeatletter
-\newtcbtheorem{theorem}{Theorem}{enhanced,
+\newtcbtheorem{itheorem}{Theorem}{enhanced,
 	breakable,
 	colback=white,
 	colframe=myr!80!black,
@@ -231,12 +231,41 @@
 \makeatother
 
 
-% command to use the definition box \define{Name}{Verbose definition of Name}
-\newcommand{\define}[2]{\begin{definition}{#1}{}#2\end{definition}}
-% command to use the definition box \define{(optional) Example title}{Verbose description of Example}
-\newcommand{\eg}[2]{\begin{example}{#1}{}#2\end{example}}
-% command to use the definition box \define{(optional) Example title}{Verbose description of Example}
-\newcommand{\thrm}[2]{\begin{theorem}{#1}{}#2\end{theorem}}
+% green box used for theorems
+\makeatletter
+\newtcbtheorem{ilemma}{Lemma}{enhanced,
+	breakable,
+	colback=white,
+	colframe=myr!80!black,
+	attach boxed title to top left={yshift*=-\tcboxedtitleheight},
+	fonttitle=\bfseries,
+	title={#2},
+	boxed title size=title,
+	boxed title style={%
+			sharp corners,
+			rounded corners=northwest,
+			colback=tcbcolframe,
+			boxrule=0pt,
+		},
+	underlay boxed title={%
+			\path[fill=tcbcolframe] (title.south west)--(title.south east)
+			to[out=0, in=180] ([xshift=5mm]title.east)--
+			(title.center-|frame.east)
+			[rounded corners=\kvtcb@arc] |-
+			(frame.north) -| cycle;
+		},
+	#1
+}{def}
+\makeatother
+
+
+% command to use the definition box \definition{Name}{Verbose definition of Name}
+\newcommand{\definition}[2]{\begin{idefinition}{#1}{}#2\end{idefinition}}
+% command to use the definition box \definition{(optional) Example title}{Verbose description of Example}
+\newcommand{\example}[2]{\begin{iexample}{#1}{}#2\end{iexample}}
+% command to use the definition box \definition{(optional) Example title}{Verbose description of Example}
+\newcommand{\theorem}[2]{\begin{itheorem}{#1}{}#2\end{itheorem}}
+\newcommand{\lemma}[2]{\begin{ilemma}{#1}{}#2\end{ilemma}}
 
 % used to make table of contents for each part
 \titleclass{\part}{top}

@@ -16,7 +16,7 @@ Tasks are associated to temporal constraints (a.k.a. deadlines), hence the sched
 
 \section{Real Time Scheduling}
 
-\define{Scheduler}{
+\definition{Scheduler}{
     A scheduler generates a schedule from a set of tasks
 \begin{enumerate}
     \item In the case of Unicore processor system (UP) (simpler definition), a schedule $\sigma(t)$ is a function mapping time $t$ into an executing task.
@@ -27,7 +27,7 @@ Tasks are associated to temporal constraints (a.k.a. deadlines), hence the sched
 Hence a scheduler is responsible for selecting the task to execute at time $t$.
 }
 
-\define{Scheduling algorithm}{Algorithm used to select for each time instant $t$ a task to be executed on a CPU among the ready task}
+\definition{Scheduling algorithm}{Algorithm used to select for each time instant $t$ a task to be executed on a CPU among the ready task}
 Given a task set $\mathcal{T}$, a scheduling algorithm $\mathcal{A}$ generates the schedule $\sigma_\mathcal{A}(t)$.\\
 A task set is schedulable by an algorithm $\mathcal{A}$ if $\sigma_\mathcal{A}$ does not contain missed deadlines.\\
 To verify that no missed deadlines occur, a \side{Schedulability test} checks if $\mathcal{T}$ is schedulable by $\mathcal{A}$.
