@@ -14,7 +14,7 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
     - [x] Cyclic Executive Scheduling
     - [x] Fixed Priority Scheduling
     - [x] Dynamic Priority Scheduling
-- [ ] Aperiodic Servers
+- [x] Aperiodic Servers
     - [x] Background Execution
     - [x] Immediate Execution
     - [x] Polling Servers
@@ -22,10 +22,10 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
     - [x] Sporadic Servers
     - [x] Constant Bandwidth Servers (CSB) (+ EDF)
 - [ ] Resource Access Protocols
-    - [ ] Introduction
-    - [ ] Non Preemptive Protocol (NPP)
-    - [ ] Highest Locking Protocol (HLP)
-    - [ ] Priority Inheritance Protocol (PIP)
+    - [x] Introduction
+    - [x] Non Preemptive Protocol (NPP)
+    - [x] Highest Locking Protocol (HLP)
+    - [x] Priority Inheritance Protocol (PIP)
     - [ ] Priority Ceiling Protocol (O/I-PCP)
 - [ ] The Kernel
 - [ ] Timer and Clock latency
