@@ -32,6 +32,7 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
 - [ ] The non preemptable section latency 
 
 # TODO: #
-- [ ] Add examples in "Periodic Task Scheduling" and "Aperiodic Servers"
-- [ ] Complete examples with images of scheduling process
-- [x] Add schedulability analysis   
+- [x] Add examples in "Periodic Task Scheduling", "Aperiodic Servers" and "Resource Access Protocols"
+- [x] Complete examples with images of scheduling process
+- [ ] Add computation of blocking time for different resource access protocols
+- [x] Add schedulability analysis
