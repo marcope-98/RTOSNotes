@@ -276,7 +276,7 @@ Since we have to look only at jobs released at the critical instant, we can cons
 
 \subsection{Processor Utilization Factor test}
 The feasibility of a task set with contrained deadlines could be guaranteed using the utilization based test, by reducing tasks' periods to relative deadlines:
-\[U_{lub} = \sum_{i=1}^n \cfrac{C_i}{D_i} \le n(2^{\sfrac{1}{n}-1})\]
+\[U_{lub} = \sum_{i=1}^n \cfrac{C_i}{D_i} \le n(2^{\sfrac{1}{n}}-1)\]
 However, such a test would be quite pessimistic, since the workload on the processor would be overestimated.\\
 For this reason this test is \textbf{sufficient but not necessary}.
 
@@ -310,3 +310,140 @@ For a harmonic task set, the utilisation bound is $U_{lub} = 1$.
 % sufficient but not necessary
 % does not compute an exact result
 % RM assignment and preemptive scheduling
+
+\subsection{Examples of schedulability analysis}
+    \subsubsection{Example 1}
+    Consider a task set of three periodic tasks with deadline equal to period:
+    \[\tau_1 = (20,100)\qquad \tau_2 = (40, 150)\qquad \tau_3 = (100,350)\]
+    Now let us consider the schedulability of the task set using the three methods introduced before:
+    \example{Processor Utilization Factor test}
+    {
+        First, let us compute $U_{lub}$ for the task set of three tasks with $n=3$
+        \[U_{lub} = n(2^{\sfrac{1}{n}} - 1) = 3(2^{\sfrac{1}{3}} - 1) \approx 0.77976315\]
+        Then let us compute the Utilisation for the three tasks:
+        \[U = \sum_{i=1}^n \cfrac{C_i}{T_i} = \cfrac{20}{100} + \cfrac{40}{150} + \cfrac{100}{350} = 0.752380952\]
+        Hence, the sufficient test states that since $U \le U_{lub}$ the task set is schedulable.
+        }
+    \example{Processor Demand Analysis}
+    {
+        Let us choose a set of scheduling points for the analysis.
+        \begin{itemize}
+            \item Task $\tau_1$.
+            \[S_1 = \{100\}\]
+            For each scheduling point in $S_1$ find, if any, point for which $W_1(t)\le D_1$
+            \begin{align*}
+                W_1(0,100) = \sum_{h=1}^1 \ceil{\cfrac{t}{T_h}}C_h = C_1 = 20 \le 100
+            \end{align*}
+            Since there exists at least a scheduling point where the relationship is satisfied, $\tau_1$ is schedulable
+            \item Task $\tau_2$.
+            \[S_2 = \{100, 150\}\]
+            \begin{align*}
+                W_2(0,100) = \sum_{h=1}^2 \ceil{\cfrac{t}{T_h}}C_h = 20\cfrac{100}{100} + 40 \ceil{\cfrac{100}{150}} = 20 + 40 = 60 \le 100
+            \end{align*}
+            Since there exists at least a scheduling point where the relationship is satisfied, $\tau_2$ is schedulable
+            \item Task $\tau_3$.
+            \[S_3 = \{100, 150, 200, 300, 350\}\]
+            \begin{align*}
+                W_3(0,100) &= 20 + 40 + 100 = 160 > 100\\
+                W_3(0,150) &= 2\cdot 20 + 40  + 100 = 180 > 150\\
+                W_3(0,200) &= 2\cdot 20 + 2\cdot 40 + 100 = 220 > 200 \\
+                W_3(0,300) &= 3\cdot 20 + 2 \cdot 40 + 100 = 240 \le 300\\
+            \end{align*}
+            Since there exists at least a scheduling point where the relationship is satisfied, $\tau_3$ is schedulable
+        \end{itemize}
+        }
+    \example{Response Time Analysis}
+    {
+        \begin{itemize}
+            \item Task $\tau_1$.
+            \begin{align*}
+                R^{(0)}_1 &= C_1 = 20\\
+                R^{(1)}_1 &= C_1 = R^{(0)}_1
+            \end{align*}
+            Since $R_1 < D_1$, the task is schedulable.
+            \item Task $\tau_2$.
+            \begin{align*}
+                R^{(0)}_2 &= C_2 = 40\\
+                R^{(1)}_2 &= 40 + \ceil{\cfrac{40}{100}}20 = 60\\
+                R^{(2)}_2 &= 40 + \ceil{\cfrac{60}{100}}20 = R^{(1)}_2
+            \end{align*}
+            Since $R_2 \le D_2$ the task is schedulable.
+            \item Task $\tau_3$.
+            \begin{align*}
+                R^{(0)}_3 &= C_3 = 100\\
+                R^{(1)}_3 &= 100 + \ceil{\cfrac{100}{100}}20 + \ceil{\cfrac{100}{150}}40 = 160\\
+                R^{(2)}_3 &= 100 + \ceil{\cfrac{160}{100}}20 + \ceil{\cfrac{160}{150}}40 = 220\\
+                R^{(3)}_3 &= 100 + \ceil{\cfrac{220}{100}}20 + \ceil{\cfrac{220}{150}}40 = 240\\
+                R^{(4)}_3 &= 100 + \ceil{\cfrac{240}{100}}20 + \ceil{\cfrac{240}{150}}40 = R^{(3)}_3
+            \end{align*}
+            Since $R_3 \le D_3$ the task is schedulable.
+        \end{itemize}
+        }
+
+    \subsubsection{Example 2}
+    Consider a task set of three periodic tasks with deadline equal to period:
+    \[\tau_1 = (40,100)\qquad \tau_2 = (40, 150)\qquad \tau_3 = (100,350)\]
+    Now let us consider the schedulability of the task set using the three methods introduced before:
+    \example{Processor Utilization Factor test}
+    {
+        First, let us compute $U_{lub}$ for the task set of three tasks with $n=3$
+        \[U_{lub} = n(2^{\sfrac{1}{n}} - 1) = 3(2^{\sfrac{1}{3}} - 1) \approx 0.77976315\]
+        Then let us compute the Utilisation for the three tasks:
+        \[U = \sum_{i=1}^n \cfrac{C_i}{T_i} = \cfrac{40}{100} + \cfrac{40}{150} + \cfrac{100}{350} = 0.952380952\]
+        Since $U_{lub} < U < 1$ we cannot determined whether the task set is schedulable using the Processor Utilitzation Factor test.
+    }
+    \example{Processor Demand Analysis}
+    {
+        Let us choose a set of scheduling points for the analysis.
+        \begin{itemize}
+            \item Task $\tau_1$.
+            \[S_1 = \{100\}\]
+            For each scheduling point in $S_1$ find, if any, point for which $W_1(t)\le D_1$
+            \begin{align*}
+                W_1(0,100) = \sum_{h=1}^1 \ceil{\cfrac{t}{T_h}}C_h = C_1 = 40 \le 100
+            \end{align*}
+            Since there exists at least a scheduling point where the relationship is satisfied, $\tau_1$ is schedulable
+            \item Task $\tau_2$.
+            \[S_2 = \{100, 150\}\]
+            \begin{align*}
+                W_2(0,100) = \sum_{h=1}^2 \ceil{\cfrac{t}{T_h}}C_h = 40\cfrac{100}{100} + 40 \ceil{\cfrac{100}{150}} = 40 + 40 = 80 \le 100
+            \end{align*}
+            Since there exists at least a scheduling point where the relationship is satisfied, $\tau_2$ is schedulable
+            \item Task $\tau_3$.
+            \[S_3 = \{100, 150, 200, 300, 350\}\]
+            \begin{align*}
+                W_3(0,100) &= 40 + 40 + 100 = 180 > 100\\
+                W_3(0,150) &= 2\cdot 40 + 40  + 100 = 220 > 150\\
+                W_3(0,200) &= 2\cdot 40 + 2\cdot 40 + 100 = 260 > 200 \\
+                W_3(0,300) &= 3\cdot 40 + 2\cdot 40 + 100 = 300 \le 300\\
+            \end{align*}
+            Since there exists at least a scheduling point where the relationship is satisfied, $\tau_3$ is schedulable
+        \end{itemize}
+        }
+    \example{Response Time Analysis}
+    {
+        \begin{itemize}
+            \item Task $\tau_1$.
+            \begin{align*}
+                R^{(0)}_1 &= C_1 = 40\\
+                R^{(1)}_1 &= C_1 = R^{(0)}_1
+            \end{align*}
+            Since $R_1 < D_1$, the task is schedulable.
+            \item Task $\tau_2$.
+            \begin{align*}
+                R^{(0)}_2 &= C_2 = 40\\
+                R^{(1)}_2 &= 40 + \ceil{\cfrac{40}{100}}40 = 80\\
+                R^{(2)}_2 &= 40 + \ceil{\cfrac{80}{100}}40 = R^{(1)}_2
+            \end{align*}
+            Since $R_2 \le D_2$ the task is schedulable.
+            \item Task $\tau_3$.
+            \begin{align*}
+                R^{(0)}_3 &= C_3 = 100\\
+                R^{(1)}_3 &= 100 + \ceil{\cfrac{100}{100}}40 + \ceil{\cfrac{100}{150}}40 = 180\\
+                R^{(2)}_3 &= 100 + \ceil{\cfrac{180}{100}}40 + \ceil{\cfrac{180}{150}}40 = 260\\
+                R^{(3)}_3 &= 100 + \ceil{\cfrac{260}{100}}40 + \ceil{\cfrac{260}{150}}40 = 300\\
+                R^{(4)}_3 &= 100 + \ceil{\cfrac{300}{100}}40 + \ceil{\cfrac{300}{150}}40 = R^{(3)}_3
+            \end{align*}
+            Since $R_3 \le D_3$ the task is schedulable.
+        \end{itemize}
+        }
