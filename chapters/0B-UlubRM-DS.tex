@@ -1,1 +1,84 @@
 \chapter{$U_{lub}$ for RM + Deferrable Server}
+To simplify the computation of the bound for $n$ periodic tasks, we first determine the worst-case relations among the tasks, and then we derive the lower bound against the worst-case model.
+
+Consider a set $n$ periodic tasks ($\tau_1,\dots, \tau_n$), ordered by increasing periods, and a Deferrable Serve with a higher priority. The worst-case condition for the priodic tasks, is such that $T_1 < T_n < 2T_1$. In the presence of a DS, however, the derivation of the worst-case is more complex and requires the analysis of three different cases. For the sake of clarity, here we analyze one case only, the most general, in which DS may execute three times within the period of the highest-priority periodic task. This happens when DS defers its service at the end of its period and lso executes at the beginning of the next period. In this situation, the full processor utilization is achieved by the following tasks' parameters:
+
+\[
+\begin{dcases}
+    C_s = T_1 - (T_s + C_s) = \cfrac{T_1 - T_s}{2}\\
+    C_1 = T_2 - T_1\\
+    C_2 = T_3 - T_2\\
+    \dots\\
+    C_{n-1} = T_n - T_{n-1}\\
+    C_n = T_s - C_s - \sum_{i=1}^{n-1}C_i = \cfrac{3T_s + T_1 - 2T_n}{2}
+\end{dcases}    
+\]
+
+Hence, the resulting utilization is:
+\begin{align*}
+    U &= \cfrac{C_s}{T_s} + \cfrac{C_1}{T_1} + \dots + \cfrac{C_n}{T_n}\\
+    &= U_s + \cfrac{T_2 - T_1}{T_1} + \dots + \cfrac{T_n - T_{n-1}}{T_{n-1}} + \cfrac{3T_s + T_1 - 2T_n}{2T_n}\\
+    &= U_s + \cfrac{T_2}{T_1} + \dots + \cfrac{T_n}{T_{n-1}} + \left(\cfrac{3T_s}{2T_1} + \cfrac{1}{2}\right) \cfrac{T_1}{T_n} - n 
+\end{align*}
+
+defining:
+\[
+    \begin{dcases}
+        R_s = \cfrac{T_1}{T_s}\\
+        R_i = \cfrac{T_{i+1}}{T_i}\\
+        K = \cfrac{1}{2}\left(3\cfrac{T_s}{T_1} + 1\right)
+    \end{dcases}
+\]
+and noting that 
+\[R_1R_2\dots R_{n-1} = \prod_{j=1}^{n-1}R_j = \cfrac{T_n}{T_1}\]
+The utilization factor may be written as
+\[U = U_s + \sum_{i=1}^{n-1}R_i + \cfrac{K}{\prod_{j=1}^{n-1}R_j} - n\]
+we minimize $U$ over $R_i$, $i = 1,\dots,n-1$. Hence,
+\begin{align*}
+    \pd{U}{R_i} &= \cancelto{0}{\pd{U_s}{R_i}} - \cancelto{0}{\pd{n}{R_i}} + \cancelto{0}{\pd{\sum_{j\ne i}^{n-1} R_j}{R_i}} + \pd{R_i}{R_i} + \pd{K\,\left(\prod_{j=1}^{n-1}R_j\right)^{-1}}{R_i}\\
+    &= 1 + K\,\left(\prod_{j=i}^{n-1}R_j\right)^{-1}\,\pd{R_i^{-1}}{R_i}\\
+    &= 1 - K\,\left(\prod_{j=i}^{n-1}R_j\right)^{-1}\,R_i^{-2}\\
+    &= 1 - \cfrac{K}{R_i^2\,\left(\prod_{j\ne i}^{n-1}R_j\right)}\\
+    &= 1 - \cfrac{K}{R_i \, \left(\prod_{j=1}^{n-1}R_j\right)}
+\end{align*}
+
+Thus, defining $P= \prod_{j=1}^{n-1}R_j$, U is minimum when:
+
+\[
+\begin{dcases}
+    R_1P = K\\
+    R_2P = K\\
+    \dots\\
+    R_{n-1}P = K
+\end{dcases}
+\]
+that is, when all $R_i$ have the same value:
+\[R_1 = R_2 = \dots = R_{n-1} = K^{\sfrac{1}{n}}\]
+Substituting this value in $U$ we obstain:
+\begin{align*}
+    U_{lub} &= U_s + \sum_{i=1}^{n-1}R_i + \cfrac{K}{\prod_{j=1}^{n-1}R_j} - n\\
+    &= U_s +\sum_{i=1}^{n-1}\left(K^{\sfrac{1}{n}}\right) + \cfrac{K}{\prod_{j=1}^{n-1}\left(K^{\sfrac{1}{n}}\right)} - n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + \cfrac{K}{K^{\sfrac{n-1}{n}}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K\,K^{-\sfrac{n-1}{n}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K{1-\sfrac{n-1}{n}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K{\sfrac{n-n+1}{n}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K{\sfrac{1}{n}}-n\\
+    &= U_s + nK^{\sfrac{1}{n}} - K^{\sfrac{1}{n}} + K{\sfrac{1}{n}} - n\\
+    &= U_s + n(K^{\sfrac{1}{n}} - 1)
+\end{align*}
+
+Now, noting that 
+%
+
+\[U_s = \cfrac{C_s}{T_s} = \cfrac{T_1-T_s}{2T_s} = \cfrac{R_s - 1}{2}\]
+we have
+\[R_s = 2U_s + 1\]
+Thus, $K$ can be rewritten as
+\[K = \left(\cfrac{3}{2R_s} + \cfrac{1}{2}\right) = \cfrac{U_s + 2}{2U_s + 1}\]
+and finally
+\[U_{lub} = U_s + n \left[\left( \cfrac{U_s + 2}{2U_s + 1}\right)^{\sfrac{1}{n}}-1\right]\]
+
+Thus, given a set of $n$ periodic tasks and a polling server withg utilization factors $U_p$ and $U_s$, respectively, the schedulability of the periodic task set is guaranteed under RM if
+\[U_p + U_s \le U_s + n\left(K^{\sfrac{1}{n}} - 1\right)\]
+that is, if
+\[U_p \le n \left[\left( \cfrac{U_s + 2}{2U_s + 1}\right)^{\sfrac{1}{n}}-1\right]\]
