@@ -38,3 +38,5 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
 - [x] Add schedulability analysis
 - [ ] Missing O/I-PCP
 - [ ] Missing Probabilistic Guarantees and PROSIT
+- [ ] DS and PS schedulability analysis (even though the appendix fills the knowledge gap)
+- [ ] Missing real-world considerations
