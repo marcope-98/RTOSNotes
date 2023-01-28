@@ -27,7 +27,9 @@
   chapters/04-ResourceAccessProtocols,
   chapters/05-TheKernel,
   chapters/06-TimerAndClockLatency,
-  chapters/07-TheNonPreemptableSectionLatency
+  chapters/07-TheNonPreemptableSectionLatency,
+  chapters/0A-UlubRM-PS,
+  chapters/0B-UlubRM-DS
 }
 
 % bibliography resources
@@ -110,11 +112,15 @@
     \include{chapters/06-TimerAndClockLatency}
     \include{chapters/07-TheNonPreemptableSectionLatency}
     \stopcontents[parts]
-   
+
     
-    \clearpage
-    \chapter*{Bibliography}
-    \addcontentsline{toc}{chapter}{{Bibliography}}
-    \printbibliography[heading=bibempty]
+    \appendix
+    \include{chapters/0A-UlubRM-PS}
+    \include{chapters/0B-UlubRM-DS}
+    
+    %\clearpage
+    %\chapter*{Bibliography}
+    %\addcontentsline{toc}{chapter}{{Bibliography}}
+    %\printbibliography[heading=bibempty]
 
 \end{document}

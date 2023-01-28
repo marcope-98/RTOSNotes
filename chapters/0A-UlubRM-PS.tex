@@ -1,0 +1,92 @@
+\chapter{$U_{lub}$ for RM + Polling Server}
+We first consider the problem of guaranteeing a set of hard periodic tasks in the presence of soft aperiodic tasks handled by a Polling Server. Then we show how to derive a schedulability test for hard aperiodic requests.
+
+The schedulability of periodic tasks can be guaranteed by evaluating the interference introduced by the Polling Server on periodic execution. In the worst case, such an interference is the same as the one introduced by an equivalent periodic task having a periodi equal to $T_s$ and a computation time equal to $C_s$. In fact, independently of the number of aperiodic tasks handled by the server, a maximum time equal to $C_s$ is dedicated to aperiodic requests at each server period. As a consequence, the processor utilization factor of the Polling Server is
+\[U_s = \cfrac{C_s}{T_s}\]
+and hence the schedulability of a periodic set with $n$ tasks and utilization $U_p$ can be guaranteed if
+\[U_p + U_s \le U_{lub}(n+1)\]
+If periodic tasks (including the server) are scheduled by RM, the schedulability test becomes
+\[\sum_{i=1}^{n} \left(\cfrac{C_i}{T_i}\right) + \cfrac{C_s}{T_s} \ le (2^{\sfrac{1}{(n+1)}}- 1)(n+1)\]
+Note that more Polling Servers can be created and execute concurrently on different aperiodic task sets.\\
+In general, in the presence of $m$ servers, a set of $n$ periodic tasks is schedulable by RM if
+\[U_p + \sum_{j=1}^m U_sj \le U_{lub}(n+m)\]
+A more precise schedulability test can be derived by assuming that PS is the highest-priooority task in the system. To simplify the computation, the worst-case relations among the tasks are first determined, and then the lower bound is computed against the worst-case model.
+
+Consider a set of $n$ periodic tasks ($\tau_1,\dots, \tau_n$) ordered by increasing periods, and a PS server with highest priority. The worst-case scenario for a set of periodic tasks that fully utilize the processor is characterized by the following parameters:
+\[
+\begin{dcases}
+    C_s = T_1 - T_s\\
+    C_1 = T_2 - T_1\\
+    C_2 = T_3 - T_2\\
+    \dots\\
+    C_{n-1} = T_n - T_{n-1}\\
+    C_n = T_s - C_s - \sum_{i=1}^{n-1}C_i = 2T_s - T_n
+\end{dcases}    
+\]
+
+The resulting utilization is then
+\begin{align*}
+    U &= \cfrac{C_s}{T_s} + \cfrac{C_1}{T_1} + \dots + \cfrac{C_n}{T_n}\\
+    &= U_s + \cfrac{T_2 - T_1}{T_1} + \dots + \cfrac{T_n - T_{n-1}}{T_{n-1}} + \cfrac{2T_s - T_n}{T_n}\\
+    &= U_s + \cfrac{T_2}{T_1} + \dots + \cfrac{T_n}{T_{n-1}} + \left(\cfrac{2T_s}{T_1}\right) \cfrac{T_1}{T_n} - n 
+\end{align*}
+
+Defining:
+\[
+    \begin{dcases}
+        R_s = \cfrac{T_1}{T_s}\\
+        R_i = \cfrac{T_{i+1}}{T_i}\\
+        K = \cfrac{2T_s}{T_1} = \cfrac{2}{R_s}
+    \end{dcases}
+\]
+and noting that 
+\[R_1R_2\dots R_{n-1} = \prod_{j=1}^{n-1}R_j = \cfrac{T_n}{T_1}\]
+The utilization factor may be written as
+\[U = U_s + \sum_{i=1}^{n-1}R_i + \cfrac{K}{\prod_{j=1}^{n-1}R_j} - n\]
+we minimize $U$ over $R_i$, $i = 1,\dots,n-1$. Hence,
+\begin{align*}
+    \pd{U}{R_i} &= \cancelto{0}{\pd{U_s}{R_i}} - \cancelto{0}{\pd{n}{R_i}} + \cancelto{0}{\pd{\sum_{j\ne i}^{n-1} R_j}{R_i}} + \pd{R_i}{R_i} + \pd{K\,\left(\prod_{j=1}^{n-1}R_j\right)^{-1}}{R_i}\\
+    &= 1 + K\,\left(\prod_{j=i}^{n-1}R_j\right)^{-1}\,\pd{R_i^{-1}}{R_i}\\
+    &= 1 - K\,\left(\prod_{j=i}^{n-1}R_j\right)^{-1}\,R_i^{-2}\\
+    &= 1 - \cfrac{K}{R_i^2\,\left(\prod_{j\ne i}^{n-1}R_j\right)}\\
+    &= 1 - \cfrac{K}{R_i \, \left(\prod_{j=1}^{n-1}R_j\right)}
+\end{align*}
+
+Thus, defining $P= \prod_{j=1}^{n-1}R_j$, U is minimum when:
+
+\[
+\begin{dcases}
+    R_1P = K\\
+    R_2P = K\\
+    \dots\\
+    R_{n-1}P = K
+\end{dcases}
+\]
+that is, when all $R_i$ have the same value:
+\[R_1 = R_2 = \dots = R_{n-1} = K^{\sfrac{1}{n}}\]
+Substituting this value in $U$ we obstain:
+\begin{align*}
+    U_{lub} &= U_s + \sum_{i=1}^{n-1}R_i + \cfrac{K}{\prod_{j=1}^{n-1}R_j} - n\\
+    &= U_s +\sum_{i=1}^{n-1}\left(K^{\sfrac{1}{n}}\right) + \cfrac{K}{\prod_{j=1}^{n-1}\left(K^{\sfrac{1}{n}}\right)} - n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + \cfrac{K}{K^{\sfrac{n-1}{n}}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K\,K^{-\sfrac{n-1}{n}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K{1-\sfrac{n-1}{n}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K{\sfrac{n-n+1}{n}}-n\\
+    &= U_s + (n-1)K^{\sfrac{1}{n}} + K{\sfrac{1}{n}}-n\\
+    &= U_s + nK^{\sfrac{1}{n}} - K^{\sfrac{1}{n}} + K{\sfrac{1}{n}} - n\\
+    &= U_s + n(K^{\sfrac{1}{n}} - 1)
+\end{align*}
+
+Now, noting that 
+\[U_s = \cfrac{C_s}{T_s} = \cfrac{T_1-T_s}{T_s} = R_s - 1\]
+we have
+\[R_s = U_s + 1\]
+Thus, $K$ can be rewritten as
+\[K = \cfrac{2}{R_s} = \cfrac{2}{U_s + 1}\]
+and finally
+\[U_{lub} = U_s + n \left[\left(\cfrac{2}{U_s + 1}\right)^{\sfrac{1}{n}}-1\right]\]
+
+Thus, given a set of $n$ periodic tasks and a polling server withg utilization factors $U_p$ and $U_s$, respectively, the schedulability of the periodic task set is guaranteed under RM if
+\[U_p + U_s \le U_s + n\left(K^{\sfrac{1}{n}} - 1\right)\]
+that is, if
+\[U_p \le n \left[\left(\cfrac{2}{U_s + 1}\right)^{\sfrac{1}{n}}-1\right]\]
