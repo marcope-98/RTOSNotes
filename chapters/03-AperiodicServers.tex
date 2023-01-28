@@ -8,8 +8,18 @@ The simplest method to handle a set of soft aperiodic activities in the presence
 
 The major advantage of background scheduling is its simplicity. In general, only two queues are needed to implement the scheduling mechanism: one (with a higher priority) dedicated to periodic tasks and the other (with a lower priority) reserved for aperiodic requests. The two queueing strategies are independent and can be realized by different algorithms. Tasks are taken from the aperiodic queue only when the periodic queue is empty. The activation of a new periodic instance causes any aperiodic tasks to be immediately preempted.
 
+    \begin{figure}[!h]
+        \centering
+        \includegraphics[width = 0.75\textwidth]{images/image02.png}
+    \end{figure}
+
 \section{Immediate Execution}
 Contrary to the Background Execution, aperiodic tasks are served with the highest priority as soon as they come. This however, might cause deadline misses among the periodic tasks.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width = 0.75\textwidth]{images/image03.png}
+\end{figure}
 
 Aperiodic Servers are the solution to the problem. Normally we associate two parameters with a server:
 \begin{itemize}
@@ -18,9 +28,16 @@ Aperiodic Servers are the solution to the problem. Normally we associate two par
 \end{itemize}
 Roughly speaking, the idea is that the served tasks receive no more that $C_s$ time units every $T_s$. How this is done depends on the specific server technology.
 
+
 The server is scehduled as any periodic tasks. Priorities are manipulated in favour of the server. Tasks inside the server can be queued with an arbitrary discipline.
 \section{Polling Servers (PS)}
 The average response time of aperiodic tasks can be improved with respect to background scheduling through the use of a \side{server}, that is, a periodic task whose purpose is to service aperiodic requests as soon as possible. Like any periodic task, a server is characterized by a \side{server period} $T_s$ and a computation time $C_s$, called \side{server capacity}, or \side{server budget}. In general, the server is scheduled with the same algorithm used for the periodic tasks, and once active, it serves the aperiodic requests within the limit of its budget. The ordering of aperiodic requests does not depend on the scheduling algorithm used for periodic tasks, and it can be done by arrival time, computation time, deadline or any other parameter.
+
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width = 0.75\textwidth]{images/image04.png}
+\end{figure}
 
 
 The \side{Polling Server (PS)} is an algorithm based on such an approach. At regular intervals equal to the period $T_s$, PS become active and serves the pending aperiodic requests withing the limit of its capacity $C_s$. If no aperiodic requests are pending, PS suspends itself until the beginning of its next period, and the budget originally allocated for aperiodic service is discharged and given periodi tasks.\\
@@ -28,6 +45,13 @@ Note that if an aperiodic request arrives just after the server has suspended, i
 
 \section{Deferrable Servers (DS)}
 The \side{Deferrable Server (DS)} algorithm is a service technique introduced by Lehoczky, Sha, and Strosnider to improve the average response time of aperiodic requests with respect to polling service. As the Polling Server, the DS algorithm creates a periodic task (usually having a high priority) for servicing aperiodic requests. However, unlike polling, DS preserves its capacity if no requests are pending upon the invocation of the server. The capacity is maintained until the end of the period, so that aperiodic requests can be services at the same server's priority at anytime, as long as the capacity has not been exhausted. At the beginning of any server period the capacity is replenished at its full value.
+
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width = 0.75\textwidth]{images/image05.png}
+\end{figure}
+
 
 DS provides much better aperiodic responsiveness than polling, since it preserves the capacity until is needed. Shorter response times can be achieved by creating a Deferrable Server having the highest priority among the periodic tasks.
 

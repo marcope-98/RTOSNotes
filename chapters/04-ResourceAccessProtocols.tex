@@ -12,7 +12,7 @@ In this chapter, we describe the main problems that may arise in a uniprocessor 
 So far we have assumed that all tasks that run and compete for a processor are independent, which means that they do not interact with one another. But there are several occasions in which this assumption cannot be made (e.g. when two tasks need to share information, exchange variables,\dots).
 The other is when you have to compete for shared resources.
 
-In this section we will introduce this problem and in particular we will introduce the notion of atomicity.\\
+In this section we will introduce this problem and in particular we will introduce the notion of atomicity.
 \definition{Atomic Instruction}{An atomic instruction is an instruction whose execution cannot be interleaved with the execution of other instructions}
 In this sense atomic operations are always sequentialized since they cannot be interrupted. Under these conditions they are safe operations.\\
 On the other hand, non atomic operations can be interrupted, and as such they are not \textit{safe} operations.
@@ -120,8 +120,23 @@ The rest of this chapter presents the following resource access protocols:
 \section{Non Preemptive Protocol (NPP)} 
 A simple solution that avoids the unbounded priority inversion problem is to disallow preemption during the execution of any critical section. This method, also referred to as \side{Non-Preemptive Protocol (NPP)}, can be implemented by raising the priority of a task to the highest priority level whenever it enters a shared resource. In particular, as soon as a task $\tau_i$ enters a resource $R_k$, its synamic priority is raised to the level:
 \[p_i(R_k) = \max_h \{p_h\}\]
-The dynamic priority is then reset to the nominal value $p_i$ when the task exits the critical section.\\
-This method solves the priority inversion phenomenon, however, is only appriopriate when tasks use short critical sections because it creates unnecessary blocking.
+The dynamic priority is then reset to the nominal value $p_i$ when the task exits the critical section.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width =0.75\textwidth]{images/image06.png}
+\end{figure}
+
+
+This method solves the priority inversion phenomenon, however, is only appriopriate when tasks use short critical sections because it creates unnecessary blocking. This actually might cause deadline misses of tasks that do not use the shared resource.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width =0.75\textwidth]{images/image07.png}
+\end{figure}
+In the example, $\tau_0$ misses its deadline (suffers a blocking time equal to 3) even though it does not use any resource!!\\
+The solution is to raise $\tau_3$ priority to the maximum between tasks accessing the shared resource (i.e. $\tau_1$) priority.
+
 
 
 \section{Highest Locking Priority (HLP)}
@@ -134,6 +149,11 @@ p_i(R_k) = \max_h\{p_i | \tau_h \text{ uses } R_k\}
 The dynamic priority is then reset to the nominal value $p_i$ when the task exits the critical section. The online computation of the priority level in equation \ref{eq:equation2} can be simplified by assigning each resource $R_k$ a \side{priority ceiling} $C(R_k)$ (computed offline) equal to the maximum priority of the tasks sharing $R_k$; that is:
 \[C(R_k) = \max_h\{p_i | \tau_h \text{ uses } R_k\}\]
 Then, as soon as a task $\tau_i$ enters a resource $R_k$, its dynamic priority is raised to the ceiling of the resource. For this reason, this protocol is also referred to as \side{Immediate Priority Ceiling}.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width =0.75\textwidth]{images/image08.png}
+\end{figure}
 
 \section{Priority Inheritance Protocol (PIP)}
 The \side{Priority Inheritance Protocol (PIP)} proposed by Sha, Rajkumar and Lehoczky, avoids unbounded priority inversion by modifying the priority of those tasks that cause blocking. In particular, when a task $\tau_i$ blocks one or more higher-priority tasks, it temporarily assumes (\textit{inherits}) the highest priority of the blocked tasks. This prevents medium-priority tasks from preempting $\tau_i$ and prolonging the blocking duration experienced by the higher-priority tasks.
@@ -152,8 +172,16 @@ The Priority Inheritance Protocol can be defined as follow:
 \end{itemize}
 
 A high priority task can experience two kinds of blocking: \side{Direct blocking} and \side{Push-through blocking}.
+
+
 \definition{Direct blocking}{It occurs when a higher-priority task tries to acquire a resource already held by a lower-priority task. Direct blocking is necessary to ensure the consistency of the shared resources}
 \definition{Push-through blocking}{It occurs when a medium-priority task is blocked by a low-priority task that has inherited a higher priority from a task it directly blocks. Push-through blocking is necessary to avoid unbounder priority inversion}
+
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width =0.75\textwidth]{images/image09.png}
+\end{figure}
 
 Although the Priority Inheritance Protocol bounds the priority inversion phenomenon, the blocking duration for a task can still be substantial because a chain of blocking can be formed. Another problem is that protocol does not prevent deadlocks (however, the latter problem can be solved by imposing a total ordering on the mutex accesses).
 
