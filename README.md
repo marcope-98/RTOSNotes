@@ -27,16 +27,16 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
     - [x] Highest Locking Protocol (HLP)
     - [x] Priority Inheritance Protocol (PIP)
     - [ ] Priority Ceiling Protocol (O/I-PCP)
-- [ ] The Kernel
-- [ ] Timer and Clock latency
-- [ ] The non preemptable section latency 
+- [x] The Kernel
+- [x] Timer and Clock latency
+- [x] The non preemptable section latency 
 
 # TODO: #
 - [x] Add examples in "Periodic Task Scheduling", "Aperiodic Servers" and "Resource Access Protocols"
 - [x] Complete examples with images of scheduling process
-- [ ] Add computation of blocking time for different resource access protocols
+- [x] Add computation of blocking time for different resource access protocols
 - [x] Add schedulability analysis
 - [ ] Missing O/I-PCP
 - [ ] Missing Probabilistic Guarantees and PROSIT
-- [ ] DS and PS schedulability analysis (even though the appendix fills the knowledge gap)
+- [ ] Missing DS and PS schedulability analysis (even though the appendix fills the knowledge gap)
 - [ ] Missing real-world considerations

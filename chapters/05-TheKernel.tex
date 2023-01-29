@@ -1,1 +1,273 @@
 \chapter{The Kernel}
+
+Recall the following elementary defintions:
+\definition{Real-Time Operating Sytems (RTOS)}{Operating System providing support to Real-Time applications}
+\definition{Rea-Time application}{The correctness depends not only on the output values, but also on the time when such values are produced}
+\definition{Operating System}
+{
+    An Operating System is:
+    \begin{itemize}
+        \item Set of computer programs
+        \item Interface between applications and hardware
+        \item a way to control the execution of application programs
+        \item a way to manage the hardware and software resources
+    \end{itemize}
+}
+In particular we can interpret an operating system as a:
+\begin{itemize}
+    \item a Service Provider: an API plus some services behind. This API needs to be suitable for real-time application.
+    \item a Resource Manager: implements schedulers, policies to share resource, aperiodic servers, \dots
+\end{itemize}
+The services provided by the Operating System are executed in \side{Kernel Space}: whenever you execute a program on the operating systems the processor switches in a particular mode called \side{supervisor mode} (in this mode the processor can do anything allowed by the machine including interrupts, manage memory, \dots).
+In this kernel space the operating system is able to:
+\begin{itemize}
+    \item Process Synchronization, Inter-Process Communication
+    \item Schedule processes/threads
+    \item Input and Output
+    \item Allocate Virtual Memory
+\end{itemize} 
+All of these things are exported and accessible by means of an API.
+
+\section{Introduction}
+The core of the machine is called the \side{Kernel}
+\definition{Kernel}{core part of the OS, allowing multiple tasks to run on the same CPU}
+The core feature of the kernel is that it allows a task set $\mathcal{T}$ composed by $N$ tasks to run in parallel in a $M$ CPUs ($M < N$). From the application/program point of view there is no difference between having a task executed in an intermediate way or having tasks executed in a dedicated processor: so what the operating system does is to ensure a proper temporal multiplexing between the tasks.
+
+The task scheduling service relies on two core components:
+\begin{itemize}
+    \item \side{Scheduler}: decides which task to execute
+    \item \side{Dispatcher}: component that implements the context switch between the tasks. Often this component relies on some hardware extension that facilitates this type of service.
+\end{itemize}
+
+The kernel also provides a mechanism for allowing tasks to communicate and synchronize between each other. On this regard there are two possible paradigms: 
+\begin{itemize}
+    \item Shared memory (threads).\\
+    Shared Memory utilizes mutexes, semaphores and condition variables, which the kernel provides. From a real time point of view this service has to come along some real-time resource sharing protocols.
+    \item Message passing (processes).\\
+    Contrary to Shared memory, Message passing is based on different interaction models such as pipeline, client-server, \dots\\
+    The kernel must once again provide some IPC mechanism: pipes, message queues, mailboxes, remote procedure calls (RPC), \dots\\
+    On top of this some real-time protocols can still be used
+\end{itemize}
+
+In practice, an adequate scheduling of system resources removes the need for over-enginnering the system, and is necessary for providing a predictable QoS. For this reason, an adequate scheduling of system resources considers two important aspects: the algorithm and the implementation.\\
+For instance, we have seen efficient algorithm for scheduling tasks and resources, however all applications are treated by a \side{Timer}. 
+This introduces a set of questions and problems to consider in the implementation of the scheduling algorithm:
+\begin{itemize}
+    \item Is the timer reliable?
+    \item Is the scheuduler able to select a high-priority task as soon as it is ready?
+    \item And the dispatcher?
+\end{itemize}
+\example{Periodic Task}{
+    When considering a periodic task, it expects to be executed at time $r = r_0 + jT$, but sometimes it is delayed to $r = r_0 + jT + \delta$, where the quantity $\delta$ becomes an offset or a drift term that makes the timing not reliable.\\
+    This delay may cause deadline misses.
+}
+
+\section{Kernel Latency}
+\definition{Kernel Latency}{Delay $\delta$ with which a kernel implement its decisions}
+When a primitive is called, the primitive takes some time to execute and during this time there is not possibility preempt the kernel. Therefore, in practice, the operating system is temporarily sospending the scheduling mechanism. This is situation really similar to the resource access protocols, in fact, we can think of the kernel as a shared resource that is not preemptable and therefore the kernel latency can be modelled as a blocking time.\\
+Hence the schedulability analysis tools introduced are modified as follows:
+\begin{itemize}
+    \item \textbf{Processor Utilization factor test}
+     \[\forall i \in [1,n] \qquad\sum_{k=1}^{i-1} \cfrac{C_k}{T_k} + \cfrac{C_i + \delta}{T_i} \le U_{lub}\]
+    \item \textbf{Response Time Analysis}
+    \[R_i = C_i + \delta + \sum_{h=1}^{i-1}\ceil{\cfrac{R_i}{T_h}}C_h\]
+    \item \textbf{Processor Demand analysis}
+    \[\exists 0\le t\le D_i\qquad W_i(0,t) = C_i \sum_{h=1}^{i-1}\ceil{\cfrac{t}{T_h}}C_h \le t-\delta\] 
+\end{itemize}
+
+The scheduler is called whenever an internal (e.g. IPC, signal, \dots) or external (e.g. interrupt) events is triggered.\\
+When one of these events take place, there exists some time between the triggering of the event and the dispatch which can be decomposed in four components:
+\begin{itemize}
+    \item Event generation 
+    \item Event delivery (interrupts may be disabled)
+    \item Scheduler activation (non preemptable section)
+    \item Scheduling time
+\end{itemize}
+There are quite a few elements that may generate the delay.
+
+All these elements of uncertainty need to be understood, the reason and how the system manages introduces this delay and most importantly how to manage this delay in a real-time kernel.\\
+Remember that we are interested in the worst case possibility, so all the components that compose the kernel latency should be designed so that in the worst-case the maximum is minimized.
+
+\section{System Architecture}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The system architecture is composed by a system bus that is interconnecting the following components:
+\begin{itemize}
+    \item One or more CPUs
+    \item Memory (RAM)
+    \item I/O Devices
+    \begin{itemize}
+        \item Secondary memory (disks, \dots)
+        \item Network cards
+        \item Graphic cards
+        \item Keyboard, mouse, \dots
+    \end{itemize}
+\end{itemize}
+
+\subsection{The CPU}
+The model of the CPU is composed of the following registers
+\begin{itemize}
+    \item General-purpose registers that can be accessed by all the programs. These registers can be either data registers or address registers
+    \item Program Counter (PC) aka Intruction pointer
+    \item Stack Pointer (SP) register
+    \item Flags register (aka Program Status Word)
+    \item Some special registers, which control how the CPU works, must be "protected" 
+\end{itemize}
+
+Regual user programs should not be allowed to influence the CPU mode of operation, perform I/O operations and reconfigure virtual memory. For this reason there is a need for privileged mode of execution
+\begin{itemize}
+\item Regual registers vs special registers
+\item Regual intructions vs privileged instructions
+\end{itemize}
+User programs: low privilge level (\side{User Level})
+
+The OS kernel runs in supervisor mode.
+
+\example{Intel x86}{
+    Real CPUs are more complex.
+    They have few General Purpose registers: EAX, EBX, ECX, EDX (accumulator registers containing an 8 bit part and a 16 bit part), EBP, ESI, EDI
+    \begin{itemize}
+        \item EAX: Main accumulator
+        \item EBX: sometimes used as base for arrays
+        \item ECX: sometimes used as counter
+        \item EBP: stack base pointer (for subroutines calls)
+        \item ESI: source index
+        \item EDI: destination index
+    \end{itemize} 
+    They also have segmented memory architecture: segment registers CS (code segment), DS (data segment), SS (stack segment), GS, FS.
+
+    Finally they have various mode of operation: RM, PM, VM86, x86-64,\dots, mainly due to backward compatibility.
+}
+
+The Kernel is part of the OS which manages the hardware.
+
+Runs with the CPU in Supervisor Mode (high privilege level):
+\begin{itemize}
+    \item Privilege level known as Kernel Level (KL), execution in Kernel Space
+    \item Regual programs run in User Space
+\end{itemize}
+Mechanismns for increasing the privilege level (from US to KS) in a controlled way
+\begin{itemize}
+    \item Interrupts (+ traps/hw exeptions).\\
+    \item Instructions causing a hardware exception
+\end{itemize}
+Switch the CPU from User Level to Supervisor mode by entering the kernel. This can be used to implement system calls.
+A partical Context Switch is performed: flags and PC are pushed to the stack, if the processor is executing at User Level, switch to Kernel Level, and eventually switch to a kernel stack finally execution jumps to a handler in the kernel (save the user registers for restoring them later).
+Once finished return to low privilege level (execution returns to User Space) through a "return from interrupt" Assembly instruction (\texttt{IRET} on x86): Pop flags and PC from stack and eventually switch back to user stack.
+Return path  from system calls and hardware interrupts to handlers.
+
+To understand interrupts, copnsider simplified CPU execution first
+\missingfigure{slide 24}
+The CPU interatively:
+\begin{itemize}
+    \item Fetch an instruction (address given by PC)
+    \item Increase the PC
+    \item Execute the intruction (might update the PC on jump\dots)
+\end{itemize}
+
+A More realistic execution model
+\missingfigure{slide 25}
+Interrupt cannot fire during the execurtion of an intruction.
+Hardware exception: cause by the execution of an intruction:
+\begin{itemize}
+    \item \texttt{trap},\texttt{syscall},\texttt{sc},\dots
+    \item I/O instructions at low privilege level, Page faults, \dots
+\end{itemize}
+
+The interrupt tabole holds the addresses of the handlers:
+\begin{itemize}
+    \item Interrupt $n$ fires: after eventually switching to KS and pushing flags and PC on the stack
+    \item Read the address contained in the $n^{th}$ entry of the interrupt table, and jump to it!
+\end{itemize}
+
+Interrupt tables are implemented in hardware or in software:
+\begin{itemize}
+    \item x86, interrupt description table composed by interrupt gates. The CPU automatically jumpts to the $n^{th}$ interrupt gate
+    \item Other CPUs jump to a fixed address: a software demultiplexer reads the interrupt table
+\end{itemize}
+ 
+
+\textbf{Software Interrupt - System Call}
+\begin{enumerate}
+    \item Task $\tau_1$, executes and invokes a system call
+    \item Execution passes from US to KS (change stack, push PC and flags, increase privilege level)
+    \item The invoked syscall executes. Maybe, it is blocking
+    \item $\tau_1$ blocks and the system returns to US, and $\tau_2$ is scheduled
+\end{enumerate}
+
+\textbf{Hardware Interrupt}
+\begin{enumerate}
+    \item Task $\tau_2$ is executing, a hardware interrupt fires
+    \item Execution passes from US to KS (change stack, push PC and flags, increase privilege level)
+    \item the proper Interrupt Service Routine executes
+    \item The ISR can unblock $\tau_1$. When execution returns to US, $\tau_1$ is scheduled
+\end{enumerate}
+
+The executino flow enters the kernel for two reasons
+\begin{itemize}
+    \item Reacting to events coming from up (syscalls)
+    \item Reacting to an event coming from below (an hardware interrupt from a device)
+\end{itemize}
+The kernel executes in the context of the interrupted task.\\
+A system call can block the invoking task, or can unblock a different task\\
+An ISR can unblock a task\\
+If a task is blocked/unblocked, when returning to user space a context switch can happen.
+
+The scheduler is invoked when return from KS to US
+
+\example{I/O operation}{Consider a generic Input or Output to an external device such as a PCI card.\\
+This operation is performed by the kernel and user programs must uyse a syscall
+
+The operation is performed in 3 phases:
+\begin{enumerate}
+    \item Setup: prepare the device for the I/O operation
+    \item Wait: wait for the end of  the operation
+    \item Cleanup: complete the operation
+\end{enumerate}
+This can be done using polling, PIO, DMA, \dots
+}
+
+\subsection{Polling}
+    User programs invoke the kernel; execution in kernel space until the operation is terminated.\\
+    The kernel cyclically reads (polls) an interafce status register to check if the operation is terminated\\
+    Busy-waiting in kernel space!
+    \begin{itemize}
+        \item No user task can execute while waiting for the I/O operation \dots
+        \item The operation must be very short
+        \item I/O operation == blocking time
+    \end{itemize} 
+
+    \begin{enumerate}
+        \item The user program raises a software input
+        \item Setup phase - in kernel: in case of input operation, nothing is done; in case of output operation, write a value to a card register
+        \item Wait - in kernel: cycle until a bit of the card status register becomes 1
+        \item Cleanup - in kernel: in case of input, read a value from a card register; in case of output, nothing is done. Eventually return to phase 1
+        \item IRET
+    \end{enumerate}
+    \subsection{Programmed I/O}
+    User programs invoke tyhe kernel; execution returns to user space while waiting for the device: the task that invoked the syscall blocks\\
+    Anb interrupt will notify the kernel when the "wait" phase is terminated:
+    \begin{itemize}
+        \item The interrupt handler will take care of performing the I/O operation
+        \item Many frequent short interruption of unrelated user-space tasks
+    \end{itemize}
+
+    \begin{enumerate}
+        \item The user program raises a software input
+        \item Setup phase - in kernel: instruct the device to raise an input when it is ready for I/O
+        \item Wait - return to user space: block the invoking task, and schedule a new one (IRET)
+        \item Cleanup - in kernel: the interrupt fires $\rightarrow$ enter kernel, and perform the I/O operation
+        \item Return to phase 2, or unblock the task if the operation is terminated (IRET)
+    \end{enumerate}
+\subsection{DMA}
+User programs invoke the kernel; execution returns to user space while waiting for the device. The task that invoked the syscall blocks!
+
+I/O operations are not performed by the kernel on interrupt, Performed by a dedicated HW device,\\
+An interrupt is raised when the whole I/O operation is terminated
+
+\begin{enumerate}
+    \item The user program raises a software input
+    \item Setup phase - in kernel: instruct the DMA (or the Bus Mastering Device) to perform the I/O
+    \item Wait - return to user space: block the invoking task, and schedule a new one (IRET)
+    \item Cleanup - in kernel: the interrupt fires $\rightarrow$ the operation is terminated. Stop device and DMA
+    \item Unblock the task and invoke the scheduler (IRET)
+\end{enumerate}

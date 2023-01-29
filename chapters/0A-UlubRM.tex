@@ -1,0 +1,40 @@
+\chapter{$U_{lub}$ for RM for $N$ tasks}
+Given a task set $\mathcal{T}$ of $N$ tasks scheduled using the RM priority assignment, the conditions that allow to compute the least upper bound of the processor utilization factor are:
+\[
+\begin{dcases}
+    T_1 < T_n < 2T_1\\
+    C_1 = T_2 - T_1\\
+    C_2 = T_3 - T_2\\
+    \dots\\
+    C_{n-1} = T_n - T_{n-1}\\
+    C_n = T_1 - \sum_{i=1}^{n-1}C_i = 2T_1 - T_n
+\end{dcases}    
+\]
+Thus the processor utilization factor becomes
+\[T = \cfrac{T_2 - T_1}{T_1} + \cfrac{T_3- T_2}{T_2} + \dots + \cfrac{T_n- T_{n-1}}{T_{n-1}} + \cfrac{2T_1 - T_n}{T_n}\]
+Defining
+\[R_i = \cfrac{T_{i+1}}{T_i}\]
+and noting that 
+\[\prod_{i=1}^{n-1} R_i= \cfrac{T_n}{T_1}\]
+the utilization factor may be written as 
+\[U = \sum_{i=1}^{n-1}R_i + \cfrac{2}{\prod_{i=1}^{n-1} R_i} - n\]
+
+To minimize $U$ over $R_i$, $i = 1,\dots, n-1$, we have
+\[\pd{U}{R_k} = 1 - \cfrac{2}{R_i\,\prod_{i=1}^{n-1} R_i}\]
+Thus defining $P = \prod_{i=1}^{n-1} R_i$, $U$ is minimum when:
+\[
+    \begin{dcases}
+        R_1 P = 2\\
+        R_2 P = 2\\
+        \dots\\
+        R_{n-1}P = 2
+    \end{dcases}
+\]
+that is, when all $R_i$ have the same value
+\[R_1 = R_2 = \dots = R_{n-1} = 2^{\sfrac{1}{n}}\]
+Substituting this value in $U$ we obtain
+\begin{align*}
+    U_{lub} &= (n-1)2^{\sfrac{1}{n}} + \cfrac{2}{2^{(1 - \sfrac{1}{n})}} - n\\
+    &= n 2^{\sfrac{1}{n}} - 2^{\sfrac{1}{n}} + 2^{\sfrac{1}{n}} -n\\
+    &= n(2^{\sfrac{1}{n}} - 1)
+\end{align*}

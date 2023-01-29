@@ -117,8 +117,9 @@ The rest of this chapter presents the following resource access protocols:
     \item Priority Ceiling Protocol (PCP)
 \end{itemize}
 
+
 \section{Non Preemptive Protocol (NPP)} 
-A simple solution that avoids the unbounded priority inversion problem is to disallow preemption during the execution of any critical section. This method, also referred to as \side{Non-Preemptive Protocol (NPP)}, can be implemented by raising the priority of a task to the highest priority level whenever it enters a shared resource. In particular, as soon as a task $\tau_i$ enters a resource $R_k$, its synamic priority is raised to the level:
+A simple solution that avoids the unbounded priority inversion problem is to disallow preemption during the execution of any critical section. This method, also referred to as \side{Non-Preemptive Protocol (NPP)}, can be implemented by raising the priority of a task to the highest priority level whenever it enters a shared resource. In particular, as soon as a task $\tau_i$ enters a resource $R_k$, its dynamic priority is raised to the level:
 \[p_i(R_k) = \max_h \{p_h\}\]
 The dynamic priority is then reset to the nominal value $p_i$ when the task exits the critical section.
 
@@ -137,7 +138,53 @@ This method solves the priority inversion phenomenon, however, is only appriopri
 In the example, $\tau_0$ misses its deadline (suffers a blocking time equal to 3) even though it does not use any resource!!\\
 The solution is to raise $\tau_3$ priority to the maximum between tasks accessing the shared resource (i.e. $\tau_1$) priority.
 
+\subsection{Blocking Time and Response Time}
+NPP introduces a blocking time on all tasks bounded by the maximum length of a critical section used by lower priority tasks.
+Such blocking time affect the response times of the task as follows:
+\[R_i = C_i + B_i + \sum_{j=1}^{i-1} \ceil{\cfrac{R_i}{T_j}}C_j\]
+where:
+\begin{itemize}
+    \item $B_i$ is the blocking time from lower priority tasks
+    \item $\sum_{h=1}^{i-1} \ceil{\cfrac{R_i}{T_h}}C_h$ is the interference from higher priority tasks
+\end{itemize}
+\example{Response time computation}{
+Consider the following task set:
+\begin{itemize}
+    \item $\tau_1 = (20, 30, 70)$ accessing resource for $\xi_{1,1} = 0$ units of time
+    \item $\tau_2 = (20, 45, 80)$ accessing resource for $\xi_{2,1} = 1$ units of time
+    \item $\tau_3 = (20, 130, 200)$ accessing resource for $\xi_{3,1} = 2$ units of time
+\end{itemize}
 
+It follows that the blocking times associated with each task is the maximum length of a critical section used by lower priority tasks:
+\begin{itemize}
+    \item $B_1 = 2$ since $\tau_3$ might block the task for 2 units of time when accessing its resource
+    \item $B_2 = 2$ since $\tau_3$ might block the task for 2 units of time when accessing its resource
+    \item $B_3 = 0$ since there are no lower priority tasks that can block it
+\end{itemize}
+Thus, the response time of each task takes the form 
+\[R_i = C_i + B_i + \sum_{j=1}^{i-1} \ceil{\cfrac{R_i}{T_j}}C_j\]
+\begin{itemize}
+    \item For $\tau_1$
+    \begin{align*}
+        R_1^{(0)} &= 20 + 2 = 22
+    \end{align*}
+    \item For $\tau_2$
+    \begin{align*}
+        R_2^{(0)} &= 20 + 2 = 22\\
+        R_2^{(1)} &= 20 + 2 + \ceil{\cfrac{22}{70}}20 = 42\\
+        R_2^{(2)} &= 20 + 2 + \ceil{\cfrac{42}{70}}20 = 42
+    \end{align*}
+    \item For $\tau_2$
+    \begin{align*}
+        R_3^{(0)} &= 35 + 0 = 35\\
+        R_3^{(1)} &= 35 + 0 + \ceil{\cfrac{35}{70}}20 + \ceil{\cfrac{35}{80}}20 = 75\\
+        R_3^{(1)} &= 35 + 0 + \ceil{\cfrac{75}{70}}20 + \ceil{\cfrac{75}{80}}20 = 95\\
+        R_3^{(1)} &= 35 + 0 + \ceil{\cfrac{95}{70}}20 + \ceil{\cfrac{95}{80}}20 = 115\\
+        R_3^{(1)} &= 35 + 0 + \ceil{\cfrac{115}{70}}20 + \ceil{\cfrac{115}{80}}20 = 115
+    \end{align*}
+\end{itemize}
+
+}
 
 \section{Highest Locking Priority (HLP)}
 The \side{Highest Locking Priority (HLP)} protocol improves NPP by raising the priority of a task that enters a resource $R_k$ to the highest priority among the tasks sharing that resource. In particular as soon as a task $\tau_i$ enters a resource $R_k$, its dynamic priority is raised to the level
@@ -154,6 +201,7 @@ Then, as soon as a task $\tau_i$ enters a resource $R_k$, its dynamic priority i
     \centering
     \includegraphics[width =0.75\textwidth]{images/image08.png}
 \end{figure}
+The main problem with HLP is that we must know in advance which task will access the resource: hence you need to have a complete control over the application, and how the application is written. Because knowing the code is the only way to know which resources is going to use. So this mechanism works very well if you have full control of what is running in your PC or embedded system.
 
 \section{Priority Inheritance Protocol (PIP)}
 The \side{Priority Inheritance Protocol (PIP)} proposed by Sha, Rajkumar and Lehoczky, avoids unbounded priority inversion by modifying the priority of those tasks that cause blocking. In particular, when a task $\tau_i$ blocks one or more higher-priority tasks, it temporarily assumes (\textit{inherits}) the highest priority of the blocked tasks. This prevents medium-priority tasks from preempting $\tau_i$ and prolonging the blocking duration experienced by the higher-priority tasks.
@@ -177,13 +225,99 @@ A high priority task can experience two kinds of blocking: \side{Direct blocking
 \definition{Direct blocking}{It occurs when a higher-priority task tries to acquire a resource already held by a lower-priority task. Direct blocking is necessary to ensure the consistency of the shared resources}
 \definition{Push-through blocking}{It occurs when a medium-priority task is blocked by a low-priority task that has inherited a higher priority from a task it directly blocks. Push-through blocking is necessary to avoid unbounder priority inversion}
 
-
 \begin{figure}[!h]
     \centering
     \includegraphics[width =0.75\textwidth]{images/image09.png}
 \end{figure}
 
 Although the Priority Inheritance Protocol bounds the priority inversion phenomenon, the blocking duration for a task can still be substantial because a chain of blocking can be formed. Another problem is that protocol does not prevent deadlocks (however, the latter problem can be solved by imposing a total ordering on the mutex accesses).
+
+\subsection{Blocking time and computation time}
+For the Priority inheritance protocol we only consider non nested critical sections. In fact, in presence of multiple inheritance, the computatino of the blocking time becomes very complex, whereas in non nested critical sections, multiple inheritance cannot happend and the computation of the blocking time becomes simpler.
+
+The maximum blocking time can be computed based on two important properties which provide an upper bound on the number of times a task can block.
+\theorem{}{If PI is used, a task block only once on each different critical section}
+\theorem{}{If PI is used, a task can be blocked by another lower priority task for at most the duration of one critical section}
+These two properties imply that a task can be blocker more than once, but only once per each resource and once by each task.
+
+The Blocking time computation makes use of a \side{resource usage table}:
+\begin{itemize}
+    \item A task per row, in decrasing order of priority
+    \item A resource per column
+    \item Cell $(i,j)$ contains $\xi_{i,j}$, i.e. the lenght of the longest critical section of task $\tau_i$ on resource $S_j$, or 0 if the task does not use the resource.
+\end{itemize}
+
+The computation of the blocking time makes use of the resource usage table and follows the following procedure (taking into considerations the two PI properties):
+\begin{itemize}
+    \item A task can be blocked only by lower priority tasks: then, for each task (row), we must consider only the rows below (tasks with lower priority)
+    \item A task block only on resources directly used, or used by higher priority tasks (\side{indirect blocking}): for each task, only consider columns on which it can be blocked (used by itself or by higher priority tasks)
+\end{itemize}
+
+Let us consider the following resource usage table:
+\begin{table}[!h]
+    \centering 
+    \begin{NiceTabular}[hvlines]{cccc}
+        & $S_1$& $S_2$& $S_3$\\
+        $\tau_1$&2&0&0\\
+        $\tau_2$&0&1&0\\
+        $\tau_3$&0&0&2\\
+        $\tau_4$&3&3&1\\
+        $\tau_5$&1&2&1
+    \end{NiceTabular}
+\end{table}
+
+\example{}{
+    \begin{itemize}
+        \item $B_1$\\
+        $\tau_1$ can be blocked only on $S_1$. Therefore, we must consider only the first column, and take the maximu, which is 3.\\
+        Therefore $B_1 = 3$.
+        \item $B_2$\\
+        $\tau_2$ can be blocked on $S_1$ (indirect blocking) by lower priority tasks inheriting a higher priority and on $S_2$ by lower priority tasks.\\
+        Consider all cases where two distinct lower priority tasks in $\{\tau_3, \tau_4,\tau_5\}$ access $S_1$ and $S_2$, sum the two contributions, and take the maximum:
+        \begin{itemize}
+            \item $\tau_4$ on $S_1$ and $\tau_5$ on $S_2$: blocking time of 5
+            \item $\tau_4$ on $S_2$ and $\tau_5$ on $S_1$: blocking time of 4
+        \end{itemize}
+        Hence, $B_2 = 5$
+        \item $B_3$\\
+        $\tau_3$ can be blocked on all 3 resources
+        \begin{itemize}
+            \item $\tau_4$ on $S_1$ and $\tau_5$ on $S_2$: blocking time of 5
+            \item $\tau_4$ on $S_1$ and $\tau_5$ on $S_3$: blocking time of 4
+            \item $\tau_4$ on $S_2$ and $\tau_5$ on $S_1$ or $S_3$: blocking time of 4
+            \item $\tau_4$ on $S_3$ and $\tau_5$ on $S_2$: blocking time of 3
+            \item $\tau_4$ on $S_3$ and $\tau_5$ on $S_1$: blocking time of 2
+        \end{itemize}
+        Hence, $B_3 = 5$
+        \item $B_4$\\
+        $\tau_4$ can be blocked on all 3 resources, since it can be blocked only by $\tau_5$
+        \begin{itemize}
+            \item $\tau_5$ on $S_2$: blocking time of 2
+            \item $\tau_5$ on $S_1$ or $S_3$: blocking time of 1
+        \end{itemize}
+        Hence, $B_4 = 2$
+        \item $\tau_5$ cannot be blocked by any other task (because it is the lower priority task).\\
+        Hence, $B_5 = 0$
+    \end{itemize}
+}
+
+As usual the schedulability tests with a blocking time can be carried on using the three tests that we have seen:
+\begin{itemize}
+    \item Processor utilization factor test.\\
+    The system is schedulable if
+    \[\forall i \in [1,n]\qquad \sum_{k=1}^{i-1}\cfrac{C_k}{T_k} + \cfrac{C_i + B_i}{T_i} \le i(2^{\sfrac{1}{i}} - 1)\]
+    \item Response time analysis
+    \[R_i = C_i + B_i + \sum_{h=1}^{i-1}\ceil{\cfrac{R_i}{T_h}}C_h\]
+    \item Processor demand analysis.\\
+    In a task set $\mathcal{T}$ composed of independent and periodic tasks, $\tau_i$ is schedulable (for all possible phasing) if and only if
+    \[\exists t\in [0,D_i]\qquad W_i(0,t) = C_i + \sum_{h=1}^{i-1} \ceil{\cfrac{t}{T_h}}C_h \le t-B_i\]
+    As usual we can define
+    \[W_i(t) =C_i + \sum_{h=1}^{i-1} \ceil{\cfrac{t}{T_h}}C_h\]
+    \[L_i(t) = \cfrac{W_i(t)}{t}\]
+    \[L_i = \min_{t\in [0,D_i]}L_i(t) + \cfrac{B_i}{t}\]
+    The task set is schedulable if $\forall i$, $L_i\le 1$.\\
+    Again, we can compute $L_i$ by only considering the scheduling points.
+\end{itemize}
 
 \section{Priority Ceiling Protocol (PCP)} % follow lecture
 The \side{Priority Ceiling Protocol (PCP)} was introduced by Sha, Rajkumar, and Lehoczky to bound the priority inversion phenomenon and prevent the formation of deadlocks and chained blocking.

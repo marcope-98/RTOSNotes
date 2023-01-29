@@ -1,1 +1,60 @@
 \chapter{The Non Preemptable Section Latency}
+
+\definition{Non-Preemptable Section Latency}{Delay between time when an event is generated and when the kernel handles it.
+\begin{itemize}
+    \item Due to non-preemptable sections in the kernel, which delay the response to hardware interrupts
+    \item Composed by various parts: interrupt disabling, bottom halves delaying,\dots
+    \item Depends on how the kernel handles the various events
+\end{itemize}}
+
+The non-preemptable section latency $L^{np}$ is given by the sum of different components:
+\begin{enumerate}
+    \item Interrupt disabling
+    \item Delayed interrupt service
+    \item Delayed scheduler invocation
+\end{enumerate}
+The first two are mechanisms used by the kernel to guarantee the consistency of internal structures.\\
+The third mechanism is sometimes used to reduce the number of preemptions and increase the system throughput.
+
+\section{Interrupt disabling}
+Before checking ifg an interrupt is fired, the CPU checks if interrupts are enabled. Every CPU has some protected intructions (\texttt{STI/CLI} on x86) for enabling/disabling interrupts.\\
+In modern system, only the kernel (or code running in KS) can enable/disable interrupts.\\
+Interrupts disabled for a time $T^{cli} \rightarrow L^{np}\ge T^{cli}$\\
+Interrupt disabling is used to enforce mutual exclusion between sections of the kernel and ISRs.
+\section{Dealyed Interrupt Service}
+When the interrupt fires, the ISR is ran, but the kernel can delay the interrupt service some more\dots
+\begin{itemize}
+    \item ISRs are generally small, and do only few things
+    \item An ISR can set some kind of software flag, to notify that the interrupt fired
+    \item Later, the kernel can check such flag and run a larger (and more complex) interrupt handler
+\end{itemize}
+Hard IRQ handlers (ISRs) vs "Soft IRQ handlers".
+
+The advantages of "soft IRQ handlers" are:
+\begin{itemize}
+    \item ISRs generally run with interrupts disabled
+    \item Soft IRQ handlers can re-enable hardware interrupts
+    \item Enabling/Disabling soft handlers is simpler/cheaper
+\end{itemize}
+Disadvantages:
+\begin{itemize}
+    \item Increase NP latency: $L^{np} >> T^{cli}$
+    \item Soft IRQ handlers are often non-preemptable increasing the latency for other tasks too\dots
+\end{itemize}
+\section{Delayed scheduler invocation}
+Scheduler invoked when returing from KS to US.
+Sometimes, return to US after a lot of activities
+\begin{itemize}
+    \item Try to reduce the numbert of KS - US switches
+    \item Reduce the number of context switches
+    \item Throughput vs low latency
+\end{itemize}
+ISR executed at the correct time, soft IRQ handler ran immediately, but scheduler invoked too late
+
+\section{Summary}
+$L^{np}$ depends on some different factors.\\
+In general, no hardware reasons, it almost entirely depends on the kernel structure: non-preemptable section latency is generally the result of the strategy used by the kernel for ensuring mutual exclusion on its internal data structures.
+
+To analyze/reduce $L^{np}$, we need to understand such strategies.\\
+Different kernels, based on different structures, work in different ways.\\
+Some activities causing $L^{np}$ are: interrupt handling (device drivers) and management of the parallelism
