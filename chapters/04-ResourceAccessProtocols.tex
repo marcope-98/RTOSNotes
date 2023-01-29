@@ -322,11 +322,130 @@ As usual the schedulability tests with a blocking time can be carried on using t
 \section{Priority Ceiling Protocol (PCP)} % follow lecture
 The \side{Priority Ceiling Protocol (PCP)} was introduced by Sha, Rajkumar, and Lehoczky to bound the priority inversion phenomenon and prevent the formation of deadlocks and chained blocking.
 
-The basic idead of this method is to extend the Priority Inheritance Protocol with a rule granting a lock request on a free mutex. To avoid multiple blocking, this rule does not allow a task to enter a critical seciton if there are locked mutexes that could block it. This means that once a task enters its first critical section, it can never be blocked by lower-priority tasks until its completion.
+The basic idea of this method is to extend the Priority Inheritance Protocol with a rule granting a lock request on a free mutex. To avoid multiple blocking, this rule does not allow a task to enter a critical seciton if there are locked mutexes that could block it. This means that once a task enters its first critical section, it can never be blocked by lower-priority tasks until its completion.
 
 In order to realize this idea, each mutex is assigned a priority ceiling equal to the highest priority of the tasks that can lock it. Then, a task $\tau_i$ is allowed to enter a critical section only if its priority is higher than all priority ceiling of the mutexes currently locked by tasks other than $\tau_i$.
+
+The problem with Priority Inheritance Protocol resides in the case where there are multiple blockings. 
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=.75\textwidth]{images/image11.png}
+\end{figure}
+
+\example{Multiple Blocking}{Consider a task set of four tasks ($\tau_1, \tau_2, \tau_3, \tau_4$) sharing three resources $R_2, R_3, R_4$ in the following manner:
+\begin{itemize}
+    \item $\tau_1$ uses $R_2, R_3, R_4$
+    \item $\tau_2$ uses $R_2$
+    \item $\tau_3$ uses $R_3$
+    \item $\tau_4$ uses $R_4$
+\end{itemize}
+Now consider the following case:
+\begin{enumerate}
+    \item The schedule starts executing $\tau_4$
+    \item The task enters the critical section and locks resource $R_4$.
+    \item $\tau_4$ is preempted, and $\tau_3$ starts executing (higher priority task)
+    \item $\tau_3$ enters a critical section and locks resource $R_3$.
+    \item $\tau_3$ is preempted, and $\tau_2$ starts executing (higher priority task)
+    \item $\tau_2$ enters a critical section and locks resource $R_2$.
+    \item $\tau_2$ is preempted, and $\tau_1$ starts executing (higher priority task)\\
+At this point all three resources are locked by the three lower priority tasks
+    \item whenever $\tau_1$ tries to access any of the three resources it is blocked and have to give back the execution to the task holding the resource. 
+\end{enumerate}
+In the case described above, the protocol perform three context switches between an high priority task and a lower priority task holding the resource introducing unnecessary blocking time to task $\tau_1$ and performing too many context switches (which are expensive from a real-time perspective, to be precise 2 context switches for each blocking time).\\
+In addition, the lower priority tasks preempted are active all the time, and therefore they allocate on the stack their local variable. Within the stack we would have all the cumulative use of memory of each task at the same time.
+}
+
+Hence we can notice that Priority Inheritance Protocol brings several drawbacks:
+\begin{itemize}
+    \item Tasks may block multiple times
+    \item Worst case behaviour even worse that non-preemptable critical section
+    \item Costly implementation except for very simple cases
+    \item Does not even prevent deadlocks.
+\end{itemize}
+
+For all these reasons, priority ceiling was proposed.
+\definition{Priority ceiling of a resource $S$}{Maximum priority among all tasks that can psssibly access $S$}
+The mechanism behind the Priority Ceiling Protocol is that a process can only lock a resource if its dynamic priority is higher than the ceiling of any currently locked resource (excluding any that it has already locked itself).
+Thus if task $\tau$ blocks, the task holding the lock on the blocking resource inherits its priority.
+
+There are two forms of Priority Ceiling Protocol:
+\begin{itemize}
+    \item Original Priority Ceiling Protocol (OPCP)
+    \item Immediate Priority Ceiling Protocol (IPCP)
+\end{itemize}
+
+The nice priorities of both these protocols are:
+\begin{itemize}
+    \item A high priority process can be blocked at most once during its execution by lower priority processes
+    \item Deadlocks are prevented
+    \item Transitive blocking is prevented, hence multiple inheritance cannot happen
+\end{itemize}
+
+
 \subsection{Original Priority Ceiling Protocol (OPCP)}
 
-The \side{Original Priority Ceiling Protocol} can be defined as follows:
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=.75\textwidth]{images/image12.png}
+\end{figure}
+
+\example{Original Priority Ceiling Protocol}{
+    Consider a task set of four tasks ($\tau_1, \tau_2, \tau_3, \tau_4$) sharing three resources $R_2, R_3, R_4$ in the following manner:
+\begin{itemize}
+    \item $\tau_1$ uses $R_2, R_3, R_4$
+    \item $\tau_2$ uses $R_2$
+    \item $\tau_3$ uses $R_3$
+    \item $\tau_4$ uses $R_4$    
+\end{itemize}
+Given this resource utilization graph we can notice that all three resources have a priority ceiling of 1 since all three resources are used by task $\tau_1$ with the highest priority among all the tasks.
+
+Now consider the following case:
+\begin{enumerate}
+    \item The schedule starts executing $\tau_4$
+    \item The task enters the critical section and locks resource $R_4$.
+    \item $\tau_4$ is preempted, and $\tau_3$ starts executing (higher priority task)
+    \item $\tau_3$ executes and tries to lock resource $R_3$, but the protocol prevents it from locking the resource. This is because their priority of $\tau_3$ is lower than the Priority ceiling of resource $R_4$
+    \item $\tau_2$ executes and tries to lock resource $R_2$, but the protocol prevents it from locking the resource. This is because their priority of $\tau_2$ is lower than the Priority ceiling of resource $R_4$
+    \item $\tau_1$ executes and tries to lock resource $R_4$, but the protocol prevents it from locking the resource. It then transmits its priority to $\tau_4$
+    \item $\tau_4$ resumes its utilization of $R_4$ and unlocks the resource
+    \item At this point $\tau_1$ is the highest priority and can lock resource $R_4$, as well as the other resources.
+\end{enumerate}
+We can see that the priority ceiling on resource $R_4$ prevented task $\tau_2$ and $\tau_3$ from locking resources $R_2$ and $R_3$. 
+}
+This process allows to lock only once on one resource. Hence there are no excessive context switches and blocking time but still the stack occupation of the active tasks is the same.
 
 \subsection{Immediate Priority Ceiling Protocol (IPCP)}
+
+The Immediate priority ceiling considers the case where high and low priority tasks share a critical seciton. Still the ceiling is the highest priority among all tasks that can use the resource but this time not only a task is not allowed to occupy a resource if the priority is lower than the ceiling of any locked resource, but the task is not even allowed to start.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=.75\textwidth]{images/image13.png}
+\end{figure}
+
+\example{Immediate Priority Ceiling Protocol}{
+    In the example proposed before:
+    \begin{enumerate}
+        \item The schedule starts executing $\tau_4$
+        \item The task enters the critical section and locks resource $R_4$.
+        \item Task $\tau_3$ (and $\tau_2$, $\tau_1$) tries to execute, but the protocol prevents it from doing so because its priority is lower than the priority ceiling of the locked resource
+        \item Hence $\tau_4$ continues to utilize resource $R_4$ and upon releasing it, task $\tau_1$ has the highest priority among all tasks and can utilize all three resources without context switches.
+    \end{enumerate}
+}
+The immediate priority ceiling protocol prevents deadlocks, excessive context switches and blocking time and considerably lowers the stack occupation of the active tasks since they are reduced (they are not even allowed to execute)
+
+\subsection{OPCP vs IPCP}
+The comparison between the two protocols is as follows:
+\begin{itemize}
+    \item The worst case behaviour is identical from a scheduling point of view
+    \item IPCP is easier to implement than the original OPCP as blocking relationships need not to be monitored
+    \item IPCP leads to less context switches as blocking is prior to first execution
+    \item IPCP requires more priority movements as this happens with all resource usages; OPCP only changes priority if an actual block has occurred
+    \item IPCP allows substantial savings of stack occupation
+\end{itemize}
+
+\subsection{Blocking time computation}
+Contrary to priority inheritance protocol, where the blocking time is the higher combination of resource utilization between the lower rows of the resource utilization table.\\
+Whereas the Priority Ceiling Protocol only considers the maximum value of the submatrix of the lower rows of the resource utilization table.
+

@@ -43,6 +43,22 @@ The average response time of aperiodic tasks can be improved with respect to bac
 The \side{Polling Server (PS)} is an algorithm based on such an approach. At regular intervals equal to the period $T_s$, PS become active and serves the pending aperiodic requests withing the limit of its capacity $C_s$. If no aperiodic requests are pending, PS suspends itself until the beginning of its next period, and the budget originally allocated for aperiodic service is discharged and given periodi tasks.\\
 Note that if an aperiodic request arrives just after the server has suspended, it must wait until beginning of the next period, when the server capacity is replenished at its full value.
 
+The impact of the Polling Server on the other tasks is evaluated using the $U_{lub}$. In the case of a task set of periodic tasks scheduled via RM priority assignment and the presence of a polling server:
+\[U_{lub}^{PS + RM} = U_s + n\left[\left(\cfrac{2}{U_s+1}\right)^{\sfrac{1}{n}} -1\right]\]
+In addition if the server runs at the highest priority we can compute its response time as follows:
+\[R_a = \Delta_a + C_a + F_a (T_s - C_s)\]
+where:
+\begin{itemize}
+    \item $\Delta_a$ is the initial delay
+    \[\Delta_a = \ceil{\cfrac{r_a}{T_s}}T_s - r_a\]
+    \item $F_a$ is the number of full service periods
+    \[F_a = \ceil{\cfrac{C_a}{C_s}}-1\]
+    \item $\delta_a$ is the final chunck
+    \[\delta_a = C_a - F_aC_s\]
+    \item $C_a$ is the computation time of the task
+    \item $C_s$ is the server capacity
+    \item $T_s$ is the server period
+\end{itemize}
 \section{Deferrable Servers (DS)}
 The \side{Deferrable Server (DS)} algorithm is a service technique introduced by Lehoczky, Sha, and Strosnider to improve the average response time of aperiodic requests with respect to polling service. As the Polling Server, the DS algorithm creates a periodic task (usually having a high priority) for servicing aperiodic requests. However, unlike polling, DS preserves its capacity if no requests are pending upon the invocation of the server. The capacity is maintained until the end of the period, so that aperiodic requests can be services at the same server's priority at anytime, as long as the capacity has not been exhausted. At the beginning of any server period the capacity is replenished at its full value.
 
@@ -54,6 +70,9 @@ The \side{Deferrable Server (DS)} algorithm is a service technique introduced by
 
 
 DS provides much better aperiodic responsiveness than polling, since it preserves the capacity until is needed. Shorter response times can be achieved by creating a Deferrable Server having the highest priority among the periodic tasks.
+
+The impact of the Deferrable Server on the other tasks is evaluated using the $U_{lub}$. In the case of a task set of periodic tasks scheduled via RM priority assignment and the presence of a polling server:
+\[U_{lub}^{DS + RM} = U_s + n\left[\left(\cfrac{U_s+2}{2U_s+1}\right)^{\sfrac{1}{n}}-1\right]\]
 
 \section{Sporadic Servers (SS)}
 
