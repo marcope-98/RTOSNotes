@@ -39,5 +39,5 @@ Progress: ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/
 - [x] Missing O/I-PCP
 - [x] Missing DS and PS schedulability analysis (even though the appendix fills the knowledge gap)
 - [ ] Missing Probabilistic Guarantees and PROSIT
-- [ ] Missing real-world considerations
+- [ ] Missing real-world considerations (prolly this will be omitted anyway)
 - [ ] Watch Lecture recording on Operating System Structure

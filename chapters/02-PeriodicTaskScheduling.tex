@@ -104,9 +104,48 @@ Assumption: priorities change from job to job (a job $J_{i,j}$ always has the sa
 
 \subsection{Earliest Deadline First (EDF)}
 
-The Earliest Deadline First (EDF) algorithm is a dynamic scheduling rule that selects tasks according to their absolute deadlines. Specifically, tasks with realier deadlines will be executed at higher priorities. Since the absolute deadline of a periodic task depends on the current $j$th instance as
+The Earliest Deadline First (EDF) algorithm is a dynamic scheduling rule that selects tasks according to their absolute deadlines. Specifically, tasks with earlier deadlines will be executed at higher priorities. Since the absolute deadline of a periodic task depends on the current $j$-th instance as
 \[d_{i,j} = (j-1) T_i + D_i\]
 EDF is a dynamic priority assignment. Moreover, it is typically executed in preemptive mode, thus the currently executing task is preempted whenever another periodic instance with realier deadline becomes active.
 
 Note that EDF does not make any specific assumption on the periodicity of the tasks; hence, it can be used for scheduling periodc as well as aperiodic and sporadic tasks.
 
+The most important benefit of the EDF scheduling is that if we consider a task set $\mathcal{T}$ of periodic tasks with deadline equal to period, we know that a necessary condition for schedulability is that the sum of utilization is to be lower than 1
+\[U = \sum_i\cfrac{C_i}{T_i} \le 1\]
+On top of this the processor utilization factor test has an upper bound $U_{lub}$ that measures how effective is the algorithm, which is a sufficient condition.
+
+The nice thing about EDF scheduling is that the least upper bound $U_{lub}=1$. Hence, the processor utilization factor test is a sufficient and necessary condition for the schedulability of a task set.
+In other terms, using EDF achieves the full utilization of the processor.
+
+Notice that this does not mean that RM is not optimal. RM is optimal among the task set of periodic tasks with deadline equals period and static priority assignment.\\
+In this case, EDF is optimal among the scheduling algorithms with dynamic priority assignment and deadline equal to the period.
+
+In case the deadline is different from the period, the schedulability test of EDF needs to use Response Time Analysis and Processor demand analysis with a slight adjustment, according to the choice of deadlines.
+
+There are some cases when a task set not schedulable with RM can be scheduled using EDF. Consider the following task set of periodic tasks with deadline equals to the period:
+\[
+\begin{dcases}
+    \tau_1 = (3,8,8)
+    \tau_2 = (6,11,11)
+\end{dcases}    
+\]
+The utilisation of this task set is $U = 0.92$
+
+As seen in figure \ref{fig:image14}, task $\tau_2$ misses its deadline.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width = 0.75\textwidth]{images/image14}
+    \caption{}
+    \label{fig:image14}
+\end{figure}
+
+Using EDF the task set is schedulable as seen in figure \ref{fig:image15}
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width = 0.75\textwidth]{images/image15}
+    \caption{}
+    \label{fig:image15}
+\end{figure}
+
+EDF from a theoretically point of view solves all our problems in terms of schedulability, but most real-time operating system utilizes fixed priority assignments.\\
+This is because priorities are useful for scheduling analysis and because the priority allows the developer to quantify the relative importance of a task.
