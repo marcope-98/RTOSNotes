@@ -257,7 +257,7 @@ Since we have to look only at jobs released at the critical instant, we can cons
     A task set $\mathcal{T}$ is schedulable if and only if
     \[\forall \tau_i \in \mathcal{T},\quad \exists t : 0 \le t \le D_i \wedge W_i(0,t) \le t\]
     Sometimes, different notations in literature:
-    \[W_i(0,t)\rightarrow W_i(t) - \sum_{h=1}^i \ceil{\cfrac{t}{T_h}} C_h\]
+    \[W_i(0,t)\rightarrow W_i(t) = \sum_{h=1}^i \ceil{\cfrac{t}{T_h}} C_h\]
     This is equivalent, because $0 \le t \le T_i$.\\
     Someone defines 
     \[L_i(t_1,t_2) = \cfrac{W_i(t_1, t_2)}{t_2 - t_1}\]

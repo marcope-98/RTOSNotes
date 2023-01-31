@@ -1,0 +1,552 @@
+\chapter{POSIX}
+\section{Implementing Periodic Tasks}
+The pseudocode of a Periodic Task is:
+\begin{lstlisting}[language=C]
+    void *PeriodicTask(void *arg)
+    {
+        <initialization>;
+        <start periodic timer, period = T>;
+        while (condition)
+        {
+            <job body>;
+            <wait next activation>;
+        }
+    }
+\end{lstlisting}
+
+The job body is outside of out control as well as the initialization since it is application dependent. Hence we will analyze the various way we can implement the \texttt{<start periodic timer>} and \texttt{<wait next activation>} section/function using timers and clocks.
+
+\subsection{Using UNIX clock}
+
+The idea is to use unix clocks to implement the \texttt{wait\_next\_activation} function using \texttt{usleep} (relative sleep).
+
+In this naive implementation:
+\begin{itemize}
+    \item The program reads the current time
+    \item The program computes the relative sleep
+    \[\delta = \text{next activation time} - \text{current time}\]
+    \item The program calls \texttt{usleep} for a value of $\delta$
+\end{itemize}
+
+\begin{lstlisting}[language=C]
+    void wait_next_activation(void)
+    {
+        gettimeofday(&tv, NULL);
+        d = nt - (tv.tv_sec * 1000000 + tv.tv_usec);
+        nt += period;
+        usleep(d);
+    }
+\end{lstlisting}
+
+The problem with this implementation is that preemption can happen in \texttt{wait\_next\_activation} between \texttt{gettimeofday} and \texttt{usleep} resulting in an incorrect sleeping time of the task.
+
+The solution is to call a function that implements a periodic behaviour.
+
+\subsection{Using UNIX itimer}
+Unix systems provide a system call for setting up a periodic timer.
+
+\begin{lstlisting}[language=C]
+    #include <sys/time.h>
+    int setitimer (int which, const struct itimerval *value, struct itimerval *ovalue);
+\end{lstlisting}
+The first parameter of the system call is the type of interval timer to use. Three values are admissible:
+\begin{itemize}
+    \item \texttt{ITIMER\_REAL}: timer fires after a specified real time. \texttt{SIGALRM} is sent to the process.
+    \item \texttt{ITEMER\_VIRTUAL}: timer fires after the process consumes a specified amount of time (process time). \texttt{SIGPROF} is sent to the process.
+    \item \texttt{ITEMER\_PROF}: process time + system calls (both user and system time = profiling)
+\end{itemize}
+
+Hence \texttt{setitimer()} can be used to implement \texttt{<start periodic timer>}.
+
+\begin{lstlisting}[language=C]
+    #include <sys/time.h>  // setitimer()
+    #include <signal.h>    // signal()
+    #include <unistd.h>    // pause()
+
+    #define wait_next_activation pause // pause till a signal is fired
+
+    static void sighand(int s) {} // empty signal handler (need for signal())
+
+    int start_periodic_timer(uint64_t offs, int period)
+    {
+        struct itimerval t;
+        // offset
+        t.it_value.tv_sec     = offs / 1000000;
+        t.it_value.tv_usec    = offs % 1000000;
+        // period
+        t.it_interval.tv_sec  = period / 1000000;
+        t.it_interval.tv_usec = period % 1000000;
+        // register signal and specify signal handler
+        signal(SIGALRM, sighand);
+
+        return setitimer(ITIMER_REAL, &t, NULL);
+
+    }
+\end{lstlisting}
+
+The problem with this implementation is that the \texttt{SIGALRM} generated is handled by an empty handler. An idea is to implement a better \texttt{wait\_next\_activation}: instead of pause, the function can wait a \texttt{SIGALRM}.
+
+
+\begin{lstlisting}[language=C]
+    #include <sys/time.h>  // setitimer()
+    #include <signal.h>    // signal()
+
+    static sigset_t sigset;
+
+    static void wait_next_activation(void)
+    {
+        int dummy;
+        sigwait(&sigset, &dummy); // wait for any signal in the set to be pending
+    }
+
+    int start_periodic_timer(uint64_t offs, int period)
+    {
+        struct itimerval t;
+        // offset
+        t.it_value.tv_sec     = offs / 1000000;
+        t.it_value.tv_usec    = offs % 1000000;
+        // period
+        t.it_interval.tv_sec  = period / 1000000;
+        t.it_interval.tv_usec = period % 1000000;
+        // define set of signal that should be processed
+        sigemptyset(&sigset);                  // exclude all the defined signals
+        sigaddset(&sigset, SIGALRM);           // add SIGALRM to the signal set
+        sigprocmask(SIG_BLOCK, &sigset, NULL); // block signals specified in sigset (required by sigwait)
+
+        return setitimer(ITIMER_REAL, &t, NULL);
+    }
+\end{lstlisting}
+
+The limitation of using UNIX timers is that only one real-time timer is available per process.
+
+\subsection{POSIX timers}
+POSIX offer multiple types of clocks (e.g. \texttt{CLOCK\_REALTIME} and \texttt{CLOCK\_MONOTONIC}). In addition, it is possible to set up multiple timers per process (each process can dynamically allocate and start timers).
+A timer firing generates an asynchronous event which si configurable by the program.
+
+\begin{lstlisting}[language=C]
+    #include <time.h> // timer_create()
+    int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t* timerid);
+\end{lstlisting}
+\begin{itemize}
+    \item \texttt{clockid} specifies the clock that the new timer uses to measure time.
+    \item \texttt{sevp} points to a \texttt{sigevent} structure that specifies how the caller should be notified when the timer expires
+    \item \texttt{timerid} id of the new timer returned by the system call.
+\end{itemize}
+
+\begin{lstlisting}[language=C]
+    #include <time.h> // timer_settime()
+    int timer_settime(timer_t timerid, int flags, const struct itimerspec*v, struct itimerspec *ov);
+\end{lstlisting}
+\begin{itemize}
+    \item \texttt{timerid} timer id
+    \item \texttt{flags}: (use 0 = \texttt{TIMER\_ABSTIME})
+    \item \texttt{v}: interval timer specifications (timer offset \texttt{it\_value}, timer period \texttt{it\_interval})
+    \item \texttt{ov}: just set this to NULL... you wont need it trust me
+\end{itemize}
+
+Since we are using POSIX we need to link agains \texttt{librt} hence when compiling link the executable using the compiler flag \texttt{-lrt}.
+
+With this new timer the implementation of \texttt{start\_periodic\_timer} becomes
+\begin{lstlisting}[language=C]
+    #include <time.h>      // timer_create(), timer_settime
+    #include <signal.h>    // signal()
+    #include <string.h>    // memset()
+
+    static sigset_t sigset;
+
+    static void wait_next_activation(void)
+    {
+        int dummy;
+        sigwait(&sigset, &dummy); // wait for any signal in the set to be pending
+    }
+
+    int start_periodic_timer(uint64_t offs, int period)
+    {
+        struct itimerspec t;
+        struct sigevent sigev;
+        timer_t timer;
+        int res;
+        const int signal = SIGALRM;
+        // offset
+        t.it_value.tv_sec     = offs / 1000000;
+        t.it_value.tv_usec    = offs % 1000000;
+        // period
+        t.it_interval.tv_sec  = period / 1000000;
+        t.it_interval.tv_usec = period % 1000000;
+        // define set of signal that should be processed
+        sigemptyset(&sigset);                  // exclude all the defined signals
+        sigaddset(&sigset, SIGALRM);           // add SIGALRM to the signal set
+        sigprocmask(SIG_BLOCK, &sigset, NULL); // block signals specified in sigset (required by sigwait)
+        // specify the sigevent
+        memset(&sigev, 0, sizeof(struct sigevent)); // empty sigevent structure
+        sigev.sigev_notify = SIGEV_SIGNAL;
+        sigev.sigev_signo = signal;
+        // create timer
+        res = timer_create(CLOCK_MONOTONIC, &sigev, &timer);
+        // inizialize periodic timer with the specs in t
+        return timer_settime(timer, TIMER_ABSTIME, &t, NULL);
+    }
+\end{lstlisting}
+
+Still a process can still be preempted and the relative sleeping problem is still present in some form. The solution is to use Absolute Time from POSIX timers and clocks
+
+\subsection{Using POSIX clock and timers with Absolute time}
+Instead of reading the current time and computing $\delta$ based on it \texttt{wait\_next\_activation()} can directly wait for the absolute arrival time of the next job using a \texttt{clock\_nanosleep()} call.
+\begin{lstlisting}[language=C]
+    #include <time.h>
+    int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
+\end{lstlisting}
+\begin{itemize}
+    \item \texttt{clock\_id}: specifies the clock agains which the sleep interval is to be measured (\texttt{CLOCK\_REALTIME}, \texttt{CLOCK\_MONOTONIC}, \texttt{CLOCK\_PROCESS\_CPUTIME\_ID}).
+    \item \texttt{flags}: if 0 then specified request is interval, if \texttt{TIMER\_ABSTIME} then specified request is an absolute time.
+    \item \texttt{request} structure specifying time to wait
+    \item \texttt{remain} (if not NULL) returns the remaining unslept time
+\end{itemize}
+\begin{lstlisting}[language=C]
+    #include <time.h>
+    clock_gettime(clockid_t clk_id, struct timespec* res);
+\end{lstlisting}
+\begin{itemize}
+    \item \texttt{clock\_id}: specifies the clock agains which the sleep interval is to be measured (\texttt{CLOCK\_REALTIME}, \texttt{CLOCK\_MONOTONIC}, \texttt{CLOCK\_PROCESS\_CPUTIME\_ID}).
+    \item \texttt{res} result of the clock reading
+\end{itemize}
+
+\begin{lstlisting}[language=C]
+    #include <time.h>      // clock_gettime(), clock_nanosleep()
+
+    static struct timespec r;
+    static int period;
+
+    static inline void timespec_add_us(struct timespec *t, uint64_t d){ ... } // add d to timespec t by converting to us to ns
+    static void wait_next_activation(void)
+    {
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &r, NULL);
+        timespec_add_us(&r, period)
+    }
+
+    int start_periodic_timer(uint64_t offs, int period)
+    {
+       clock_gettime(CLOCK_REALTIME, &r);
+       timespec_add_us(&r, offs);
+       period = t;
+       return 0;
+    }
+\end{lstlisting}
+
+Notice that r and period are global variable: this is a bad idea. Hence we wrap these two variables in a struct:
+\begin{lstlisting}[language=C]
+    struct periodic_task
+    {
+        struct timespec r;
+        int period;
+    }
+\end{lstlisting}
+Whenever a new periodic task is needed: inside \texttt{start\_periodic\_timer} periodic task is initialized and its values are passed to the aforementioned function calls.
+
+\vfill
+\textbetweendoublerules{Summary}
+\begin{itemize}
+    \item Unix allows 1 process to have $N$ timers and 1 thread can sleep until a future time point (only relative sleep)
+    \item POSIX allows 1 timer for 1 thread (RT task) and avoids the relative-sleep problem
+    \item POSIX guarantees \texttt{CLOCK\_REALTIME} exists, but it is not good for real time applications: may jump forward/backward and is prone to overflow: it cannot be restarted hence it will overflow on 32 bit machine in year 2038
+    \item For these reasons, use \texttt{CLOCK\_MONOTONIC} whenever possible since it is not user settable, it is restarable when the system is restarted (use it in conjunction to \texttt{clock\_gettime()})
+\end{itemize}
+
+\section{Real-Time scheduling}
+\subsection{Better Statistics}
+First and foremost we need to improve the statistics for each task: since now we have considered the average time over 100 jobs as a statistics. However, this measurement may still yield a misleading result.
+
+\example{$T=D=2$}{A task $\tau$ generates 101 jobs ranging from $J_1$ to $J_{101}$.\\
+All but $J_2$ start at activation time and all but $J_1$ need 1 time units to complete.  $J_1$ however finishes 3 time units after activation (deadline miss).\\
+The average time printed by $J_{101}$ is 2: 1 job every 2 time units. Through the fact that $J_1$ missed its deadline caused every other job to miss its deadline.
+}
+In other terms we need to introduce additional statistical quantities to verify which job if any miss their deadlines: namely jitter, best and worst case response times and consecutive deadline misses.
+
+Given a job $J_{i,k}$ of a task $\tau_i$ we need to save the following quantities:
+\begin{itemize}
+    \item $k$: job number
+    \item $s_{i,k}$: start time of the job
+    \item $f_{i,k}$: finishing time of the job
+    \item $t_0$: expected time of earliest task activation (initial offset of first job activation)
+    \item For every task $\tau_i$ with offset $\Phi_i$, period $T_i$ and relative deadline $D_i$, compute the absolute activation time and absolute deadline:
+    \[r_{i,k} = t_0 + \Phi_i + (k-1)T_i\qquad d_{i,k} = r_{i,k} + D_i\]
+    Given these quantities we can define:
+    \begin{itemize}
+        \item A job $J_{i,k}$ does not miss its deadline if 
+        \[r_{i,k}\le s_{i,k}\le f_{i,k} \le d_{i,k}\]
+        \item Best and worst case response time
+        \[\min_k{(f_{i,k} - r_{i,k})}\qquad \max_k{(f_{i,k} - r_{i,k})}\]
+        \item Relative start time jitter
+        \[\max_k \abs{(s_{i,k} - r_{i,k}) - (s_{i,k-1} - r_{i,k-1})}\]
+        \item Absolute start time jitter
+        \[\max_k \abs{s_{i,k} - r_{i,k}} - \min_k{(s_{i,k} - r_{i,k})}\]
+        \item Relative finish time jitter
+        \[\max_k \abs{(f_{i,k} - r_{i,k}) - (f_{i,k-1} - r_{i,k-1})}\]
+        \item Absolute finish time jitter
+        \[\max_k \abs{f_{i,k} - r_{i,k}} - \min_k{(f_{i,k} - r_{i,k})}\]
+    \end{itemize}
+\end{itemize}
+
+These quantities can be measured using the \texttt{clock\_gettime()} in conjunction with \texttt{CLOCK\_MONOTONIC}, whereas $t_0$ can be computed using \texttt{timer\_settime()} with flag \texttt{TIMER\_ABSTIME}.\\
+In addition to this the response time $R_{i,k}$ is equal to the execution time $c_{i,k}$ if and only if $r_{i,k}$ up to $f_{i,k}$ has no preemption/blocking, otherwise it holds that $R_{i,k} > c_{i,k}$.
+To measure the execution time use \texttt{clock\_gettime()} with \texttt{CLOCK\_THREAD\_CPUTIME\_ID}.
+In addition, since this measurement is affected by energy-saving mode we need to change the cpu scaling for each core in the machine:
+\begin{lstlisting}[language=bash]
+    cd /sys/devices/system/cpu/cpufreq
+    cat policy?/scaling_{min,cur,max}_freq   # cat scaling_{min,cur,max}_freq content contained in each folder policy$character$
+    for x in policy?; do
+        sudo tee $x/scaling_min_freq < $x/scaling_max_freq; % for each core policy replace scaling_min_freq with scaling_max_freq
+    done
+    cat policy?/scaling_{min,cur,max}_freq   # cat scaling_{min,cur,max}_freq content contained in each folder policy$character$
+\end{lstlisting}
+
+\subsection{Real-Time Scheduling}
+POSIX provides support for real-time scheduling: but NO multiprocessor parititoning and migration.\\
+To provide this support for real time scheduling POSIX provides priority scheduling support:
+\begin{itemize}
+    \item Multiple priority levels
+    \item A task queue per priority level
+    \item Run first task fo highest-priority in non-empty queue
+\end{itemize}
+POSIX also provides multiple scheduling policies: a scheduling policy describes how tasks are moved between the prioririty queues. Please notice that these scheduling policies consider Fixed priority: task is always in the same priority queue.\\
+Not all RT theory for uniprocessor (UP) is for MP. So we need to partition MP to have 1 processor as 1 UP.
+In order to do so we add the following api calls:
+\begin{lstlisting}[language=C]
+    #define _GNU_SOURCE // CPU_ZERO(), CPU_SET(), sched_setaffinity()
+    #include <sched.h>  // CPU_ZERO(), CPU_SET(), sched_setaffinity()
+
+    void main(int argc, char**argv)
+    {
+        cpu_set_t cpumask;
+        CPU_ZERO(&cpumask);         // clears cpumask, so that it contains no CPUs
+        CPU_SET(0, &cpumask);       // Add CPU 0 to cpumask
+        // sets the CPU affinity mask of the thread whose ID is pid (=0),
+        // if pid is zero, then the calling thread is used.
+        // it also has to provide the size of the cpuset pointed to by cpumask
+        if (sched_setaffinity(0, sizeof(cpumask), &cpumask))
+        {
+            perror("sched_setaffinity failed");
+            return -1;
+        }
+    }
+\end{lstlisting}
+
+POSIX specifically requires four scheduling policies:
+\begin{itemize}
+    \item \texttt{SCHED\_FIFO}: tasks with same priority level (in the same queue) are executed in a first in first out manner (this might lead to starvation of other tasks with same priority). Only higher priotiy tasks can preempt it
+    \item \texttt{SCHED\_RR}: tasks with same priority level (in the same queue) are executed in a round robin fashion: a task executes for a \side{time/scheduling quantum} (fixed interval of time), than it is suspended and added to the back of the queue (tasks with the same priority are served fairly)
+    \item \texttt{SCHED\_SPORADIC}: is a sporadic server that decreases the response times of aperiodic RT tasks
+    \item \texttt{SCHED\_OTHER}: is the traditional Unix scheduler. It has dynamic priorities, and it is scheduled in background with respect to fixed priorities.
+\end{itemize}
+
+RR and FIFO priority values are comparable:
+\begin{itemize}
+    \item \texttt{sched\_get\_priority\_min(int \$policy\$)}: lowest priority value
+    \item \texttt{sched\_get\_priority\_max(int \$policy\$)}: highest priority value
+\end{itemize}
+
+Hence the schduling policy can be set using the following API calls:
+\begin{lstlisting}[language=C]
+    #include <sched.h>  
+
+    int sched_get_priority_min(int policy); // minimum priority value that can be used by the policy
+    int sched_get_priority_max(int policy); // maximum priority value that can be used by the policy
+    
+    struct sched_param
+    {
+        ...
+        int sched_priority;
+        ...
+    }
+    /*
+        @pid:    id of the thread (if 0 calling thread)
+        @policy: scheduling policy
+        @param:  value between min and max priority value (for SCHED_FIFO and SCHED_RR)
+    */
+    int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param);
+    
+    /*
+        @pid:    id of the thread (if 0 calling thread)
+        @param:  value between min and max priority value 
+    */
+    int sched_setparam(pid_t pid, const struct sched_param *param);
+
+\end{lstlisting}
+
+If there is no swap to disk, no unlucky kernel latency, and MP has no unlycky bus contention, the scheduled RT tasks will have no deadline misses.\\
+In general, "regular" (\texttt{SCHED\_OTHER}) tasks are scheduled in background relative to real-time tasks. A real-time task can preempt/starve other tasks.\\
+Running applications with real-time priroities requires root privileges, hence after compiling perform this bash commands:
+\begin{lstlisting}[language=bash]
+    sudo chown root executable # change file owner to root
+    sudo chmod u+s executable  # allow root to execute the executable (not the user)
+\end{lstlisting}
+
+\subsection{Memory Swapping}
+The virtual memory mechanism can swap part of the process address space to disk: Memory swapping can increase execution times, resulting in temporal unpredictability, hence it is not good for real-time application.
+
+A non-real time task can force a memory swap. To overcome this issue RT task can lock part of its address space in memory:
+\begin{itemize}
+    \item Locked memory cannot be swapped out of the physical memory disk
+    \item This can result in a RAM exhaustion
+\end{itemize}
+Memory locking can be performed only by applications having root privileges.
+
+\begin{lstlisting}[language=C]
+    #include <sys/mman.h>
+
+    // lock pages starting at @addr with size len (in bytes)
+    int mlock(const void *addr, size_t len);
+    // unlock pages starting at @addr with size len (in bytes)
+    int munlock(const void *addr, size_t len);
+    /*
+        lock entire address space in memory
+        MCL_CURRENT = current address space
+        MCL_FUTURE  = all memory allocated in the future
+        MCL_CURRENT | MCL_FUTURE = both
+    */
+    int mlockall(int flags);
+\end{lstlisting}
+
+
+\section{Concurrency}
+A process implements the notion of \side{protection} in the sense that each process has its own address space and other private resources. A process can write/read in its address space but is not allowed to touch other processes' resources: two processes can share some resources for communication, but this has to be excplicitly allowed by them!
+
+Processes usually communicate through message passing (e.g. pipes, sockets, signals,\dots).
+
+A process is more than a set of private resources, it is an active entity.
+The concept of process involves two aspects:
+\begin{itemize}
+    \item \side{Protection} or resource ownership
+    \item \side{Execution}\\
+    A process contains at least a schedulable entity, which can access the process's resources. As such it contains all the information for the scheduling (e.g. scheduling parameters).
+    Furthermore this schedulable entity is also characterized by (at least) a CPU state and a stack.
+\end{itemize}
+
+
+Each single-threaded process has only one thread which involves:
+\begin{itemize}
+    \item One address space per process
+    \item One stack per process
+    \item One Process Control Block (PCB) per process
+    \item Other private resources
+    \item One single executino flow per process
+\end{itemize}
+
+This differs from a multi-threaded process in the sense that a process can have multiple threads in it:
+\begin{itemize}
+    \item One address space
+    \item One PCB
+    \item Multiple execution flows in a single process
+    \item Multiple stacks (one per thread)
+    \item One Thread Control Block (TCB) per thread
+\end{itemize}
+
+\subsection{Small Summary about Processes}
+The Process Memory Layout involves three major components in its private address space: User memory, Stack and Heap.
+In particular, the user memory is divided into three segments:
+\begin{enumerate}
+    \item Initialized data segment
+    \item BSS (Block Started by Symbol): uninitialized global and static variables
+    \item Text segment (containing the program code)
+\end{enumerate}
+The heap and the stack are straightforward to understand. However, the heap is usable through \texttt{malloc} and can grow using \texttt{brk()} and \texttt{sbrk()}
+
+Each process is identified by a process ID (PID) which is unique in the system. Each time a process is created a PID is assigned to it. The value of the PID of a process can be retrieved using \texttt{getpid(void)}, whereas the PID of a process's creator (i.e. parent) can be retrieved using \texttt{getppid(void)}
+
+\subsubsection{Fork}
+A new process can be created using the api call \texttt{fork()}. The new process (called child process) contains a copy of the parent's address space. The call has one entry point and two exit points:
+\begin{itemize}
+    \item In the child, 0 is returned
+    \item In the parent, the PID of the child is returned
+\end{itemize}
+In case of error fork returns a negative value is returned.
+
+Generally speaking \texttt{fork()} is used in the following way:
+\begin{lstlisting}[language=C]
+    #include <sys/types.h> // pid_t
+    #include <unistd.h>    // fork
+    
+    pid_t child_pid = fork();
+    if(child_pid < 0) { return -1 }
+    if(child_pid == 0)
+        // child body
+    else
+        // parent body 
+\end{lstlisting}
+Alternatively:
+\begin{lstlisting}[language=C]
+    #include <sys/types.h> // pid_t
+    #include <unistd.h>    // fork
+    #include <stdlib.h>    // exit
+    
+    pid_t child_pid = fork();
+    if(child_pid < 0) { return -1 }
+    if(child_pid == 0)
+    {
+        // child body
+        exit(0);
+    }
+    // parent body 
+\end{lstlisting}
+
+Since the child address space is a copy of the parent's: the child's text segment is the same as the parent's, consequently both the parent body and the child body must be in the same executable.
+
+\subsubsection{Exec}
+To avoid this one can use the \texttt{exec()} call or any of its variants.\\
+Exec is a family of functions to replace the process address space (text, data and heap) (e.g. \texttt{execl()},\texttt{execlp()},\texttt{execle()},\texttt{execv()},\texttt{execvp()}).
+The basic idea of exec is that it loads a new programme and jumps to it, but does not create a new process.
+
+An example usage of exec is as follows:
+\begin{lstlisting}[language=C]
+    #include <sys/types.h> // pid_t
+    #include <unistd.h>    // fork
+    #include <stdio.h>     // perror
+    
+    pid_t child_pid = fork();
+    if(child_pid < 0) { return -1 }
+    if(child_pid == 0)
+    {
+        char *args[3] = {"arg1", "arg2", "arg3"};
+        execve("child_body", args, NULL);
+        perror("Execve"); // check if any error has occured
+        return -1;
+    }
+    ...
+\end{lstlisting}
+
+Some non-posix compliant systems make no distinction between program and process and only provide a fork + exec combo. POSIX also provides a \texttt{system()} function which does fork + exec (+ wait)
+
+A process terminates when:
+\begin{enumerate}
+    \item It invokes either the library call \texttt{exit()} or the system call \texttt{\_exit()}
+    \item It returns from its main function
+    \item It is killed by some external event (e.g. a signal)
+\end{enumerate}
+
+When it terminates explicity, a process can return a result to the parent.\\
+Every process can register a hook ot be called on regular process termination 
+\begin{lstlisting}[language=C]
+    #include <stdlib.h>    // atexit
+    
+    int atexit(void (*function) (void));
+\end{lstlisting}
+However, please note that handlers are not called if exiting with \texttt{\_exit()}.
+
+\subsubsection{Wait}
+First form of synchronization between processes is waiting for a children to return to the parent.\\
+A parent can wait for its child's termination using the api calls \texttt{wait()}, \texttt{waitpid()}, \texttt{wait4()}.
+Formally:
+\begin{lstlisting}[language=C]
+    #include <sys/types.h>    // pid_t
+    #include <sys/wait.h>     // wait()
+    
+    pid_t wait(int *status);
+\end{lstlisting}
+If the calling process has no children, \texttt{wait()} returns a value < 0\\
+If at least there is one terminated child, \texttt{wait()} returns the child's exit value, and child's private resources are freed\\
+If there are no terminated children, \texttt{wait()} blocks the calling process.
+
+The other variants of the wait family of function allow to select the child to wait for.
+
+Please note that after a process terminates, its private resources are not freed until its parent performs a \texttt{wait()}. Children processes that have terminated are said to be in a \side{zombie} state. Hence a good parent has to wait for its children to terminate.
+When the parent of a process dies the process is reparented to \texttt{init} (a system process whose PID is 1). As a consequence, when a process dies all its zombies are eliminated.

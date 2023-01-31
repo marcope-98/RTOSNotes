@@ -6,7 +6,7 @@ The schedulability of periodic tasks can be guaranteed by evaluating the interfe
 and hence the schedulability of a periodic set with $n$ tasks and utilization $U_p$ can be guaranteed if
 \[U_p + U_s \le U_{lub}(n+1)\]
 If periodic tasks (including the server) are scheduled by RM, the schedulability test becomes
-\[\sum_{i=1}^{n} \left(\cfrac{C_i}{T_i}\right) + \cfrac{C_s}{T_s} \ le (2^{\sfrac{1}{(n+1)}}- 1)(n+1)\]
+\[\sum_{i=1}^{n} \left(\cfrac{C_i}{T_i}\right) + \cfrac{C_s}{T_s} \le (2^{\sfrac{1}{(n+1)}}- 1)(n+1)\]
 Note that more Polling Servers can be created and execute concurrently on different aperiodic task sets.\\
 In general, in the presence of $m$ servers, a set of $n$ periodic tasks is schedulable by RM if
 \[U_p + \sum_{j=1}^m U_sj \le U_{lub}(n+m)\]
